@@ -1,0 +1,56 @@
+.ek-admin .admin-product-wizard { padding: 0; width: min(860px, calc(100vw - 32px)); overflow: hidden; }
+.admin-product-wizard[open] { display: flex; flex-direction: column; }
+.admin-product-wizard > .admin-dialog-heading { flex-shrink: 0; padding: 22px 26px 18px; margin: 0; }
+.admin-product-wizard .admin-dialog-heading h2 { font-size: 27px; }
+.admin-wizard-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 16px 26px; margin: 0; list-style: none; background: #f8f0eb; border-block: 1px solid #eadbd2; gap: 12px; flex-shrink: 0; }
+.admin-wizard-steps li { display: flex; align-items: center; gap: 9px; color: #a58e83; }
+.admin-wizard-steps li > span { display: grid; place-items: center; width: 28px; height: 28px; flex-shrink: 0; border: 1px solid #d9c8bc; border-radius: 50%; font-size: 11px; }
+.admin-wizard-steps strong { font-size: 11px; font-weight: 500; }
+.admin-wizard-steps .current { color: #750d27; }
+.admin-wizard-steps .current > span { background: #750d27; color: #fff9f3; border-color: #750d27; }
+.admin-wizard-steps .complete > span { background: #e9d3da; color: #750d27; border-color: #d9b8c3; }
+.admin-product-wizard .admin-wizard-form { display: flex; flex-direction: column; gap: 0; min-height: 0; overflow: hidden; }
+.admin-wizard-body { min-height: 0; overflow-y: auto; padding: 20px 26px; overscroll-behavior: contain; }
+.admin-wizard-panel { display: grid; gap: 16px; }
+.admin-wizard-panel[hidden], .admin-product-wizard fieldset[hidden] { display: none !important; }
+.admin-product-wizard .admin-notice { margin: 0; padding: 10px 12px; font-size: 10px; }
+.admin-product-wizard .admin-form-columns { gap: 14px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); }
+.admin-product-wizard .admin-form label { gap: 6px; font-size: 11px; }
+.admin-product-wizard .admin-form input, .admin-product-wizard .admin-form select, .admin-product-wizard .admin-form textarea { padding: 10px 12px; font-size: 12px; }
+.admin-product-wizard textarea { max-height: 80px; }
+.admin-product-wizard .admin-collection-options { padding: 12px; gap: 10px 16px; }
+.admin-product-wizard .admin-image-preview .photo { width: 50px; height: 62px; }
+.admin-wizard-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 26px; border-top: 1px solid #eadbd2; background: #fffcf8; flex-shrink: 0; }
+.admin-wizard-footer > span { font-size: 11px; color: #a4928a; }
+.admin-wizard-footer > div { display: flex; gap: 10px; }
+.admin-wizard-footer .admin-button { min-width: 90px; }
+.admin-wizard-error { margin: 0 26px 12px; flex-shrink: 0; }
+.admin-variant-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.ek-admin .admin-variant-tabs button { display: flex; align-items: center; gap: 7px; background: #faf6f2; color: #96837b; border: 1px solid #e5d8cf; border-radius: 8px; padding: 9px 12px; font-size: 11px; }
+.ek-admin .admin-variant-tabs button[aria-pressed="true"] { border-color: #750d27; color: #750d27; background: #f7e9e9; }
+.admin-variant-tabs button > span { width: 10px; height: 10px; border-radius: 50%; border: 1px solid #0002; }
+.admin-product-wizard .admin-variant-heading { margin-bottom: 14px; }
+.admin-product-wizard .admin-variant-heading h3 { font-size: 23px; }
+.admin-product-wizard .admin-variant-card { margin-bottom: 0; padding: 14px; }
+.admin-product-wizard .admin-variant-top .admin-form-columns { grid-template-columns: minmax(0, 1fr) 90px; }
+.admin-product-wizard .admin-variant-image { padding: 14px 0; }
+.admin-product-wizard .admin-variant-image > .photo, .admin-product-wizard .admin-variant-no-image { width: 64px; height: 76px; }
+.admin-product-wizard .admin-variant-sizes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.admin-product-wizard .admin-variant-size { padding: 8px; }
+.admin-product-wizard .admin-variant-size input { padding: 7px; }
+.admin-product-wizard .admin-variant-size label { font-size: 9px; }
+.admin-wizard-review { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 20px; align-items: center; }
+.admin-wizard-review .photo, .admin-wizard-no-image { width: 96px; height: 120px; border-radius: 8px; }
+.admin-wizard-review img { object-fit: contain !important; }
+.admin-wizard-no-image { display: grid; place-items: center; background: #f5e7dc; color: #a47749; }
+.admin-wizard-review h3 { font: 26px Georgia, serif; color: #750d27; margin-bottom: 10px; }
+.admin-wizard-price { font-size: 17px; }
+.admin-wizard-review p:not(.admin-small-label) { margin-top: 7px; font-size: 11px; color: #96837b; }
+.admin-wizard-description { font-size: 12px; color: #96837b; line-height: 1.7; white-space: pre-wrap; }
+.admin-wizard-variant-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.admin-wizard-variant-summary article { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 12px; background: #faf3ee; border-radius: 8px; font-size: 11px; }
+.admin-wizard-variant-summary article > span:first-child { width: 12px; height: 12px; border: 1px solid #0002; border-radius: 50%; }
+.admin-wizard-variant-summary small { grid-column: 2 / -1; font-size: 9px; color: #96837b; }
+.admin-wizard-total { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid #eadbd2; padding-top: 16px; font-size: 12px; }
+.admin-wizard-save-note { font-size: 10px; color: #96837b; line-height: 1.7; }
+@media(max-width: 620px) { .admin-product-wizard > .admin-dialog-heading, .admin-wizard-steps, .admin-wizard-footer { padding: 16px; } .admin-wizard-body { padding: 16px; } .admin-wizard-steps { gap: 6px; } .admin-wizard-steps li { flex-direction: column; align-items: center; text-align: center; gap: 7px; } .admin-wizard-steps strong { font-size: 10px; } .admin-product-wizard .admin-form-columns { grid-template-columns: minmax(0, 1fr); } .admin-product-wizard .admin-variant-sizes { grid-template-columns: repeat(2, minmax(0, 1fr)); } .admin-product-wizard .admin-variant-image { flex-direction: row; gap: 10px; } .admin-wizard-variant-summary { grid-template-columns: minmax(0, 1fr); } .admin-wizard-review { grid-template-columns: 72px minmax(0, 1fr); gap: 12px; } .admin-wizard-review .photo, .admin-wizard-no-image { width: 72px; height: 95px; } .admin-wizard-review h3 { font-size: 22px; } .admin-wizard-error { margin-inline: 16px; } }

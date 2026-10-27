@@ -1,0 +1,11 @@
+﻿/* Blend the photograph into the cream copy area without a visible seam. */
+.editorial-shop-banner .shop-banner-photo { left: 40%; right: 0; }
+.contact-banner .shop-banner-photo { left: 42%; right: 0; width: auto; }
+.editorial-shop-banner .shop-banner-photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg,#f2e3d0 0%,#f2e3d0f0 9%,#f2e3d099 24%,#f2e3d033 39%,transparent 55%); pointer-events: none; }
+.contact-banner .shop-banner-photo img { object-position: center top; }
+@media(max-width:650px) {
+  .editorial-shop-banner .shop-banner-photo, .contact-banner .shop-banner-photo { left: 38%; right: 0; width: auto; }
+  .editorial-shop-banner .shop-banner-photo::after { background: linear-gradient(90deg,#f2e3d0 0%,#f2e3d0d9 20%,#f2e3d066 48%,transparent 80%); }
+  .contact-banner .shop-banner-photo img { object-position: center top; }
+}
+

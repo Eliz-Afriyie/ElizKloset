@@ -1,0 +1,11 @@
+﻿/* A narrow portrait column shows the full photo inside a compact banner. */
+.experience-inner { grid-template-columns: 180px minmax(0,1.2fr) minmax(0,1fr); }
+.experience-photo { background: #eddbc2; aspect-ratio: auto; min-height: 225px; align-self: stretch; }
+.experience-photo img { object-fit: contain; object-position: center; }
+@media(max-width:1000px) {
+  .experience-inner { grid-template-columns: 170px minmax(0,1fr); }
+}
+@media(max-width:560px) {
+  .experience-inner { grid-template-columns: 115px minmax(0,1fr); }
+  .experience-photo { min-height: 220px; }
+}

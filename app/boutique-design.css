@@ -1,0 +1,44 @@
+﻿.more-collections { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 12px; padding-top: 20px; }
+.more-collections > a { display: flex; align-items: center; gap: 9px; padding: 12px; border: 1px solid var(--line); border-radius: 5px; background: #f7ecde; }
+.more-collections > a > svg:first-child { color: var(--gold); width: 22px; height: 22px; }
+.more-collections > a > svg:last-child { width: 13px; height: 13px; color: var(--burgundy); margin-left: auto; }
+.more-collections strong { display: block; font-size: 12px; font-weight: 500; }
+.more-collections small { display: block; font-size: 9px; color: #897260; margin-top: 4px; }
+.brand-experience { padding-top: 0; padding-bottom: 24px; }
+.experience-inner { display: grid; grid-template-columns: .85fr 1.2fr 1fr; min-height: 225px; background: #f1e2ce; overflow: hidden; border-radius: 5px; }
+.experience-photo { position: relative; min-height: 225px; }
+.experience-photo img { object-fit: cover; object-position: center 12%; }
+.experience-copy { padding: 28px 22px; align-self: center; }
+.experience-copy h2 { font-size: 30px; color: var(--burgundy); margin: 8px 0 12px; }
+.experience-copy > p:not(.eyebrow) { font-size: 12px; line-height: 1.6; color: #796658; margin-bottom: 16px; }
+.experience-copy .button { font-size: 11px; padding: 9px 18px; gap: 10px; }
+.experience-values { display: flex; flex-direction: column; justify-content: center; gap: 18px; margin: 28px 20px 28px 0; border-left: 1px solid #dbc5a9; padding-left: 24px; }
+.experience-values > span { display: flex; gap: 12px; align-items: center; font-size: 11px; color: #796658; }
+.experience-values svg { color: var(--gold); width: 22px; height: 22px; }
+.reviews-heading { text-align: left; margin-bottom: 16px; }
+.reviews-heading h2 { font-size: 29px; }
+.review-card { padding: 18px; }
+.review-card h3 { font-size: 17px; }
+.review-card blockquote { margin-block: 10px 15px; font-size: 12px; }
+.service-strip { grid-template-columns: repeat(4,1fr); padding-inline: var(--page-gutter); }
+.service-strip > .closing-line { display: none; }
+.newsletter { display: grid; grid-template-columns: 1fr 1.15fr .8fr; gap: 30px; align-items: center; padding: 24px var(--page-gutter); background: var(--burgundy); color: #fff5e8; }
+.newsletter h2 { font-size: 25px; margin-bottom: 7px; }
+.newsletter p { font-size: 11px; line-height: 1.5; }
+.newsletter-field { display: flex; overflow: hidden; border-radius: 24px; background: #fffaf5; }
+.newsletter-field input { flex: 1; min-width: 0; padding: 12px 18px; border: 0; background: transparent; color: #241c18; font-size: 12px; }
+.newsletter-field button { border: 0; color: white; background: var(--gold); padding: 10px 22px; font-size: 11px; }
+.newsletter-label { display: block; font-size: 10px; margin-bottom: 5px; }
+.newsletter .newsletter-status { font-size: 9px; margin-top: 6px; }
+.newsletter .newsletter-motto { font: 22px/1.35 Georgia,serif; padding-left: 25px; border-left: 1px solid #d7b18760; }
+.boutique-footer { display: grid; grid-template-columns: .8fr 1fr 1fr; padding-top: 24px; gap: 20px; align-items: center; }
+.footer-brand strong { display: block; font: 31px/.95 Georgia,serif; color: var(--burgundy); letter-spacing: -1px; }
+.footer-brand strong span { color: var(--gold); }
+.footer-brand small { font-size: 7px; letter-spacing: 1px; display: block; margin-top: 6px; }
+.boutique-footer nav { display: flex; gap: 18px; justify-content: center; font-size: 11px; }
+.boutique-footer .social-links-footer { grid-column: auto; justify-content: flex-end; gap: 16px; }
+.boutique-footer .social-links-footer a { font-size: 10px; }
+@media(max-width:1000px) { .more-collections { grid-template-columns: repeat(3,minmax(0,1fr)); } .experience-inner { grid-template-columns: .8fr 1.3fr; } .experience-values { grid-column: 1/-1; flex-direction: row; flex-wrap: wrap; border: 0; margin: 0; padding: 16px; gap: 18px; } .newsletter { grid-template-columns: 1fr 1fr; } .newsletter .newsletter-motto { display: none; } .boutique-footer { grid-template-columns: 1fr 1fr; } .boutique-footer .social-links-footer { grid-column: 1/-1; justify-content: flex-start; } }
+@media(max-width:560px) { .more-collections { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; padding-top: 16px; } .more-collections > a { padding: 10px; } .more-collections strong { font-size: 11px; } .more-collections small { font-size: 8px; } .experience-inner { grid-template-columns: .75fr 1.2fr; } .experience-photo { min-height: 220px; } .experience-copy { padding: 16px 12px; } .experience-copy .eyebrow { font-size: 7px; letter-spacing: 1px; } .experience-copy h2 { font-size: 24px; } .experience-copy > p:not(.eyebrow) { font-size: 10px; } .experience-copy .button { font-size: 9px; padding: 8px 11px; } .experience-values { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 14px; } .experience-values > span { font-size: 9px; gap: 7px; } .experience-values svg { width: 18px; height: 18px; } .reviews-heading h2 { font-size: 25px; } .service-strip { grid-template-columns: 1fr 1fr; } .newsletter { grid-template-columns: 1fr; gap: 16px; padding-block: 22px; } .newsletter h2 { font-size: 24px; } .boutique-footer { grid-template-columns: 1fr; gap: 20px; } .boutique-footer nav { justify-content: flex-start; gap: 20px; flex-wrap: wrap; } }
+.catalog-page .shop-heading { flex-wrap: wrap; }
+.catalog-page .filters { order: 3; width: 100%; flex-wrap: wrap; margin-left: 0; }

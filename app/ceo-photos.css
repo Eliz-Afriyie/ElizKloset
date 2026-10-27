@@ -1,0 +1,5 @@
+﻿.ceo-photo-pair { position: relative; }
+.ceo-second-photo { position: absolute; right: -16px; bottom: 18px; width: 35%; aspect-ratio: 3/4; border: 6px solid var(--background); border-radius: 5px; overflow: hidden; box-shadow: 0 6px 24px #3b211a22; }
+.ceo-second-photo img { object-fit: cover; object-position: center top; }
+.ceo-portrait figcaption { flex-wrap: wrap; }
+@media(max-width:650px) { .ceo-second-photo { right: -8px; width: 34%; border-width: 4px; } .ceo-portrait figcaption strong { font-size: 21px; } }

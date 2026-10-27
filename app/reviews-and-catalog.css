@@ -1,0 +1,20 @@
+﻿/* Five curated styles on the homepage; the shop owns the full catalog. */
+.home-page .product-grid { grid-template-columns: repeat(5,minmax(0,1fr)); }
+.catalog-intro { padding-top: 42px; padding-bottom: 8px; }
+.catalog-intro h1 { font-size: clamp(36px,4vw,56px); line-height: 1.1; margin: 12px 0; letter-spacing: -1.5px; }
+.catalog-intro > p:last-child { color: #796658; line-height: 1.6; }
+.reviews-section { padding-top: 12px; padding-bottom: 44px; }
+.reviews-heading { text-align: center; margin-bottom: 24px; }
+.reviews-heading h2 { color: var(--burgundy); font-size: 32px; margin: 9px 0 10px; }
+.reviews-heading > p:last-child { font-size: 12px; line-height: 1.6; color: #796658; }
+.reviews-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 20px; }
+.review-card { border: 1px solid var(--line); background: #fffdf9; border-radius: 6px; padding: 24px; }
+.review-stars { color: var(--gold); font-size: 16px; letter-spacing: 3px; margin-bottom: 13px; }
+.review-card h3 { font: 20px Georgia,serif; color: var(--burgundy); }
+.review-card blockquote { margin: 12px 0 20px; font-size: 13px; line-height: 1.7; color: #796658; }
+.review-author { display: flex; gap: 10px; align-items: center; }
+.review-avatar { width: 35px; height: 35px; display: grid; place-items: center; background: #f1e2d0; border-radius: 50%; font: 17px Georgia,serif; color: var(--burgundy); }
+.review-author strong { display: block; font-size: 12px; font-weight: 500; }
+.review-author div > span { display: block; font-size: 10px; color: #897260; margin-top: 3px; }
+@media(max-width:1000px) { .home-page .product-grid { grid-template-columns: repeat(3,minmax(0,1fr)); } .reviews-grid { gap: 12px; } .review-card { padding: 18px; } }
+@media(max-width:560px) { .home-page .product-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .reviews-grid { grid-template-columns: 1fr; } .reviews-heading h2 { font-size: 27px; } .reviews-section { padding-bottom: 30px; } .catalog-intro { padding-top: 28px; } }

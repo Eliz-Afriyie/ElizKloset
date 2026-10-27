@@ -1,0 +1,11 @@
+.error-toast-stack { position: fixed; top: 100px; right: 24px; z-index: 200; width: min(420px, calc(100vw - 32px)); display: grid; gap: 12px; max-height: calc(100dvh - 120px); overflow-y: auto; pointer-events: none; }
+.error-toast { display: flex; align-items: start; gap: 12px; padding: 18px; border: 1px solid #dfc3c6; border-left: 4px solid #750d27; border-radius: 12px; background: #fffaf5; color: #430b20; box-shadow: 0 10px 40px #430b2026; pointer-events: auto; font: 13px/1.6 var(--font-geist-sans), Arial, sans-serif; overflow-wrap: anywhere; }
+.error-toast > div { flex: 1; min-width: 0; }
+.error-toast strong { font-size: 14px; }
+.error-toast p { margin: 5px 0 8px; }
+.error-toast-symbol { display: grid; place-items: center; width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; background: #750d27; color: #fffaf5; font-weight: 700; }
+.error-toast-retry { padding: 4px 0; background: transparent; color: #750d27; text-decoration: underline; font: inherit; cursor: pointer; }
+.error-toast-close { display: grid; place-items: center; width: 26px; height: 26px; padding: 4px; flex-shrink: 0; background: transparent; color: #750d27; cursor: pointer; }
+.error-toast-close svg { width: 18px; height: 18px; }
+.error-toast button:focus-visible { outline: 2px solid #750d27; outline-offset: 3px; border-radius: 3px; }
+@media(max-width: 600px) { .error-toast-stack { top: auto; bottom: max(20px, env(safe-area-inset-bottom)); right: 16px; max-height: 50dvh; } }

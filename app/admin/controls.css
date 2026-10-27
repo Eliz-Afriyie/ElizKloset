@@ -1,0 +1,42 @@
+.ek-admin { --admin-control-radius: 10px; }
+.admin-inventory-alert { display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px; margin: 0 0 22px; border: 1px solid #edb0b7; border-left: 5px solid #c7354a; border-radius: 10px; background: #fff0f1; color: #962538; }
+.admin-inventory-alert > svg { width: 24px; height: 24px; flex-shrink: 0; margin-top: 2px; color: #c7354a; }
+.admin-inventory-alert strong { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.admin-inventory-alert p { font-size: 12px; line-height: 1.7; }
+.admin-inventory-alert small { display: block; margin-top: 7px; color: #aa5561; font-size: 10px; line-height: 1.6; }
+.admin-inventory-alert.warning { background: #fff5e4; border-color: #edcf94; border-left-color: #c17b12; color: #8b540c; }
+.admin-inventory-alert.warning > svg { color: #c17b12; }
+.admin-inventory-alert.warning small { color: #a47a3d; }
+.ek-admin .admin-button,
+.ek-admin .admin-date-trigger,
+.ek-admin .admin-actions-trigger,
+.ek-admin .admin-pagination button,
+.ek-admin .admin-taxonomy-tabs button,
+.ek-admin .admin-search,
+.ek-admin .admin-form input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+.ek-admin .admin-form select,
+.ek-admin .admin-form textarea,
+.ek-admin .admin-filters select,
+.ek-admin .admin-range-inputs input { border-radius: var(--admin-control-radius); }
+.ek-admin .admin-actions-menu,
+.ek-admin .admin-date-popover { border-radius: 14px; }
+.ek-admin .admin-sidebar nav a,
+.ek-admin .admin-actions-menu > a,
+.ek-admin .admin-actions-menu > button,
+.ek-admin .admin-range-presets button { border-radius: 8px; }
+.ek-admin select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b7a7c' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; }
+.ek-admin .admin-date-trigger .admin-date-chevron { width: 16px; height: 16px; margin-left: 4px; color: #96837b; transition: transform .15s ease; }
+.ek-admin .admin-date-trigger[aria-expanded="true"] .admin-date-chevron { transform: rotate(180deg); }
+.ek-admin .admin-actions-trigger svg { width: 20px; height: 20px; }
+.ek-admin .admin-calendar-heading button { display: grid; place-items: center; border-radius: 8px; }
+.ek-admin .admin-calendar-heading button svg { width: 18px; height: 18px; }
+.ek-admin .admin-range-reset,
+.ek-admin .admin-text-button,
+.ek-admin .admin-back { display: inline-flex; align-items: center; gap: 8px; }
+.ek-admin .admin-range-reset svg,
+.ek-admin .admin-text-button svg,
+.ek-admin .admin-back svg,
+.ek-admin .admin-button > svg { width: 17px; height: 17px; }
+.ek-admin .admin-collection-options > a { display: inline-flex; align-items: center; gap: 8px; }
+.ek-admin .admin-collection-options > a svg { width: 14px; height: 14px; }
+@media(prefers-reduced-motion: reduce) { .ek-admin .admin-date-trigger .admin-date-chevron { transition: none; } }

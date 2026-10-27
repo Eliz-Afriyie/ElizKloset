@@ -1,0 +1,29 @@
+﻿.contact-banner .shop-banner-photo { left: auto; right: 18%; width: clamp(220px,25vw,360px); }
+.contact-banner .shop-banner-photo img { object-fit: cover; object-position: center 18%; }
+.contact-content { display: grid; grid-template-columns: .85fr 1.2fr; gap: clamp(30px,6vw,90px); max-width: 1180px; padding-top: 42px; padding-bottom: 45px; }
+.contact-methods h2 { font: 35px/1.15 Georgia,serif; color: var(--burgundy); margin: 12px 0 16px; }
+.contact-methods > p:not(.eyebrow) { color: #796658; font-size: 13px; line-height: 1.8; margin-bottom: 24px; }
+.contact-method { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--line); padding: 16px 0; }
+.contact-method > svg { width: 26px; height: 26px; color: var(--gold); }
+.contact-method > span:nth-child(2) { flex: 1; }
+.contact-method strong { display: block; color: var(--burgundy); font-size: 13px; margin-bottom: 6px; }
+.contact-method span > span { display: block; font-size: 17px; }
+.contact-method small { display: block; font-size: 10px; color: #897260; margin-top: 5px; }
+.contact-method > span:last-child { color: var(--gold); }
+.contact-socials { margin-top: 24px; }
+.contact-socials h3 { font: 21px Georgia,serif; margin-bottom: 14px; color: var(--burgundy); }
+.contact-form-panel { padding: 27px; border: 1px solid var(--line); border-radius: 6px; background: #fffdf9; }
+.contact-form-panel > h2 { font: 29px Georgia,serif; color: var(--burgundy); }
+.contact-form-panel > p { font-size: 12px; color: #796658; margin: 12px 0 24px; }
+.contact-email-form { display: flex; flex-direction: column; gap: 18px; }
+.contact-email-form label { display: flex; flex-direction: column; gap: 8px; font-size: 12px; }
+.contact-email-form input, .contact-email-form textarea, .contact-email-form select { width: 100%; min-width: 0; padding: 11px 12px; color: var(--foreground); font: inherit; border: 1px solid #dfcfbb; border-radius: 4px; background: #fffaf5; }
+.contact-email-form textarea { resize: vertical; min-height: 120px; }
+.contact-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.contact-form-note { font-size: 10px; color: #897260; line-height: 1.6; }
+.contact-email-form .button { align-self: flex-start; font-size: 12px; }
+.contact-message-preview { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.contact-message-preview h3 { font: 20px Georgia,serif; color: var(--burgundy); margin-bottom: 12px; }
+.contact-message-preview p { font-size: 12px; color: #796658; line-height: 1.7; margin-bottom: 8px; }
+.preview-message-body { white-space: pre-wrap; }
+@media(max-width:650px) { .contact-banner .shop-banner-photo { width: 45%; left: auto; right: 0; } .contact-content { grid-template-columns: 1fr; gap: 28px; padding-top: 28px; padding-bottom: 30px; } .contact-methods h2 { font-size: 30px; } .contact-form-panel { padding: 20px; } .contact-form-row { grid-template-columns: 1fr; gap: 18px; } .contact-form-panel > h2 { font-size: 26px; } }

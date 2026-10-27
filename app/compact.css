@@ -1,0 +1,37 @@
+﻿/* Compact cards and navigation, with breathing room between sections. */
+.header { min-height: 64px; padding-block: 6px; }
+.logo > svg { width: 56px; height: 46px; }
+.logo strong { font-size: 31px; }
+.logo small { font-size: 7px; margin-top: 4px; }
+.navigation a { padding-block: 8px; }
+.collections { padding-top: 32px; }
+.collection-card .photo { height: clamp(130px, 11vw, 170px); }
+.arrivals-section { padding-top: 32px; }
+.shop { padding-top: 36px; padding-bottom: 40px; }
+.product-image .photo { aspect-ratio: auto; height: clamp(200px, 20vw, 290px); }
+.product-image .photo img { object-fit: contain; background: #efdfc8; }
+.product-body { padding: 10px; }
+.size-options { margin-block: 7px; }
+.add-button { padding: 9px; }
+@media(max-width:850px) {
+  .header { min-height: 60px; }
+  .collection-card .photo { height: 125px; }
+  .product-image .photo { height: 210px; }
+  .collections { padding-top: 26px; }
+  .arrivals-section { padding-top: 26px; }
+  .shop { padding-top: 28px; padding-bottom: 30px; }
+}
+@media(max-width:560px) {
+  .header { min-height: 56px; padding-block: 4px; }
+  .logo > svg { width: 28px; height: 38px; }
+  .logo strong { font-size: 23px; }
+  .logo small { font-size: 5px; }
+  .collection-card .photo { height: 100px; }
+  .product-image .photo { height: 200px; }
+  .collections { padding-top: 24px; }
+  .arrivals-section { padding-top: 24px; }
+  .shop { padding-top: 26px; padding-bottom: 28px; }
+}
+
+
+

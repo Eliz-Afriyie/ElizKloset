@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+/.admin-checks/
 
 # next.js
 /.next/

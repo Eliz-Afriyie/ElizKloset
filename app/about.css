@@ -1,0 +1,64 @@
+﻿.about-page { background: #fff9f3; }
+.about-editorial-hero { position: relative; isolation: isolate; min-height: 650px; overflow: hidden; background: #430b20; color: #fff9f3; }
+.about-hero-portrait { position: absolute; inset: 0 0 0 39%; z-index: -3; }
+.about-hero-portrait img { object-fit: cover; object-position: center 35%; }
+.about-hero-shade { position: absolute; inset: 0; z-index: -2; background: linear-gradient(90deg, #430b20 0%, #430b20 39%, #430b20b3 53%, #430b2010 76%); }
+.about-hero-copy { position: relative; width: min(1180px, 86%); margin: auto; padding: 80px 0 150px; }
+.about-kicker { font-size: 10px; line-height: 1.6; font-weight: 500; letter-spacing: 2.8px; color: #ab8250; }
+.about-hero-copy .about-kicker { color: #e2c49b; display: flex; align-items: center; gap: 16px; }
+.about-hero-copy .about-kicker::before { content: ''; width: 40px; height: 1px; background: #d6b181; }
+.about-hero-copy h1 { font: 400 clamp(58px, 6.3vw, 88px)/.98 Georgia, serif; letter-spacing: -2.5px; margin: 28px 0 22px; color: #fff9f3; }
+.about-hero-copy h1 em { color: #e2c49b; font-weight: 400; }
+.about-hero-copy > p:not(.about-kicker) { color: #f0dedb; font-size: 14px; line-height: 1.8; margin-bottom: 28px; }
+.about-hero-copy .about-hero-button { color: #430b20; background: #fff4e7; border: 1px solid #fff4e7; font-size: 11px; padding: 14px 19px; gap: 15px; }
+.about-hero-copy .about-hero-button:hover { background: #e2c49b; border-color: #e2c49b; }
+.about-brand-seal { position: absolute; right: 5%; top: 32px; border: 1px solid #fff4e780; border-radius: 50%; width: 110px; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; color: #fff4e7; transform: rotate(12deg); }
+.about-brand-seal > span:not(.about-seal-star) { font-size: 6px; letter-spacing: 1.2px; }
+.about-brand-seal .about-seal-star { font: 32px/1 Georgia, serif; }
+.about-hero-curve { position: absolute; bottom: -1px; left: 0; width: 100%; height: 115px; pointer-events: none; }
+.about-founder { max-width: 1180px; display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr); gap: clamp(35px, 7vw, 100px); align-items: center; padding-top: 55px; padding-bottom: 75px; scroll-margin-top: 100px; }
+.about-founder-portrait { margin: 0; padding: 0 10px 0 0; }
+.about-founder-frame { position: relative; width: 100%; aspect-ratio: 4/5; border-radius: 230px 230px 3px 3px; background: #eddbc2; box-shadow: 10px 12px 0 #eadbc5; }
+.about-founder-frame img { object-fit: cover; object-position: center 40%; border-radius: inherit; }
+.about-founder-portrait figcaption { padding-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.about-founder-signature { font: italic 28px Georgia, serif; color: #750d27; }
+.about-founder-portrait figcaption > span:last-child { font-size: 8px; letter-spacing: 2px; color: #8a7261; }
+.about-founder-copy h2 { font: 400 clamp(32px, 3.5vw, 48px)/1.13 Georgia, serif; letter-spacing: -1.2px; color: #430b20; margin: 17px 0 24px; }
+.about-founder-copy h2 em { font-weight: 400; color: #a58050; }
+.about-founder-copy > p:not(.about-kicker) { font-size: 13px; line-height: 1.95; color: #78685d; margin-bottom: 17px; }
+.about-founder-copy > .about-founder-lead { color: #48322c; font-weight: 500; }
+.about-founder-copy > .about-founder-motto { font: italic 23px Georgia, serif; color: #750d27; margin: 24px 0; }
+.about-founder-copy .button { font-size: 11px; padding: 14px 21px; }
+.about-founder-contact { display: inline-flex; align-items: center; gap: 9px; color: #750d27; font-size: 11px; padding: 15px 0; margin-left: 22px; }
+.about-founder-contact svg { width: 16px; height: 16px; }
+.about-promises { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 35px; border-top: 1px solid #e6d8c9; padding-top: 34px; padding-bottom: 55px; }
+.about-promises article + article { border-left: 1px solid #e6d8c9; padding-left: 35px; }
+.about-promises article > span { color: #a58050; font: italic 18px Georgia, serif; }
+.about-promises h3 { font: 23px Georgia, serif; color: #430b20; margin: 12px 0; }
+.about-promises p { font-size: 12px; line-height: 1.8; color: #78685d; max-width: 290px; }
+@media(min-width: 1600px) { .about-hero-portrait { left: 43%; } .about-hero-portrait img { object-position: center 32%; } }
+@media(max-width: 850px) { .about-editorial-hero { min-height: 570px; } .about-hero-copy { padding-top: 70px; padding-bottom: 130px; } .about-hero-copy h1 { font-size: 65px; } .about-brand-seal { width: 85px; height: 85px; right: 3%; } .about-founder { gap: 35px; } .about-founder-contact { display: flex; margin-left: 0; } }
+@media(max-width: 650px) {
+  .about-editorial-hero { min-height: 650px; }
+  .about-hero-portrait { inset: 0; }
+  .about-hero-portrait img { object-position: center 28%; }
+  .about-hero-shade { background: linear-gradient(0deg, #430b20 10%, #430b20f5 29%, #430b2099 48%, #430b2010 78%), linear-gradient(90deg, #430b2080, transparent 65%); }
+  .about-hero-copy { width: 86%; padding: 255px 0 120px; }
+  .about-hero-copy .about-kicker { font-size: 8px; letter-spacing: 2px; gap: 10px; }
+  .about-hero-copy .about-kicker::before { width: 23px; }
+  .about-hero-copy h1 { font-size: clamp(51px, 12vw, 67px); margin: 20px 0 17px; line-height: 1; letter-spacing: -1.8px; }
+  .about-hero-copy > p:not(.about-kicker) { font-size: 12px; margin-bottom: 22px; }
+  .about-hero-copy .about-hero-button { font-size: 10px; }
+  .about-brand-seal { top: 20px; right: 5%; width: 80px; height: 80px; }
+  .about-brand-seal > span:not(.about-seal-star) { font-size: 5px; }
+  .about-hero-curve { height: 75px; }
+  .about-founder { grid-template-columns: minmax(0, 1fr); gap: 40px; padding-top: 32px; padding-bottom: 40px; }
+  .about-founder-portrait { width: min(82%, 340px); margin: 0 auto; }
+  .about-founder-copy h2 { font-size: 36px; }
+  .about-founder-copy > p:not(.about-kicker) { font-size: 13px; }
+  .about-founder-copy .about-founder-motto { font-size: 22px; }
+  .about-founder-contact { display: inline-flex; margin-left: 18px; }
+  .about-promises { grid-template-columns: minmax(0, 1fr); gap: 23px; padding-top: 28px; padding-bottom: 36px; }
+  .about-promises article + article { border-left: 0; border-top: 1px solid #e6d8c9; padding-left: 0; padding-top: 23px; }
+}
+@media(prefers-reduced-motion: reduce) { .about-founder { scroll-behavior: auto; } }
