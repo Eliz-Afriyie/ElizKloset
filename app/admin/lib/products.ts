@@ -24,6 +24,22 @@ export class ProductCompletionError extends AdminApiError {
   }
 }
 
+// Keep API naming differences at the boundary; mutations still use real IDs.
+function normalizeProduct(record: ProductRecord): ProductRecord {
+  if (!record || typeof record !== "object") return record;
+  const raw = record as ProductRecord & { available_stock?: number };
+  const price = raw.price as ProductRecord["price"] & { discount_amount?: number };
+  return {
+    ...raw,
+    availableStock: raw.availableStock ?? raw.available_stock!,
+    price: price && { ...price, discountAmount: price.discountAmount ?? price.discount_amount },
+    variants: Array.isArray(raw.variants) ? raw.variants.map(variant => {
+      const item = variant as typeof variant & { color_id?: string | null; available_stock?: number };
+      return { ...item, colorId: item.colorId ?? item.color_id ?? null, availableStock: item.availableStock ?? item.available_stock! };
+    }) : raw.variants,
+  };
+}
+
 export function parseProductPage(value: unknown): ProductPage {
   const page = value as ProductPage;
   if (!page || !Array.isArray(page.data) || !page.pagination ||
@@ -31,11 +47,11 @@ export function parseProductPage(value: unknown): ProductPage {
       page.pagination.page < 1 || page.pagination.pageSize < 1 || page.pagination.total < 0 || page.pagination.totalPages < 0) {
     throw new Error("Unsupported product list response from the API.");
   }
-  page.data.forEach(toProduct);
+  const data = page.data.map(record => toProduct(record).apiSource!);
   if (page.summary != null && ![page.summary.all, page.summary.outOfStock, page.summary.lowStock].every((count) => Number.isInteger(count) && count >= 0)) {
     throw new Error("Unsupported stock totals in the API product list.");
   }
-  return page;
+  return { ...page, data };
 }
 
 export async function productStockSummary(page: ProductPage, filters: URLSearchParams, signal?: AbortSignal): Promise<NonNullable<ProductPage["summary"]>> {
@@ -53,6 +69,7 @@ export async function productStockSummary(page: ProductPage, filters: URLSearchP
 }
 
 export function toProduct(record: ProductRecord): AdminProduct {
+  record = normalizeProduct(record);
   if (!record || typeof record.id !== "string" || typeof record.name !== "string" || typeof record.createdAt !== "string" || !Number.isInteger(record.version) || !record.price || record.price.currency !== "GHS" || !Number.isInteger(record.price.amount) || !Number.isInteger(record.availableStock) || !Array.isArray(record.collections) || !Array.isArray(record.colors) || !Array.isArray(record.variants) || !Array.isArray(record.images) || !record.category || typeof record.category.id !== "string") {
     throw new Error("The API product response does not match the documented catalog shape.");
   }

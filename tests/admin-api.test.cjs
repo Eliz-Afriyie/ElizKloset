@@ -213,6 +213,29 @@ test("product adapter distinguishes available inventory from physical stock", ()
   assert.throws(() => products.toProduct({ id: "bad" }), /response/);
 });
 
+test("admin catalog accepts snake-case stock and discount fields without inventing colour IDs", async () => {
+  const input = {
+    ...record, availableStock: undefined, available_stock: 18, stock: 20,
+    price: { amount: 149, currency: "GHS", discount_amount: 20 },
+    colors: [], images: [],
+    variants: [{ id: "variant-blue", color: "blue", size: "M", stock: 20, available_stock: 18 }],
+  };
+  const page = products.parseProductPage({ data: [input], pagination: { page: 1, pageSize: 8, total: 1, totalPages: 1 } });
+  const product = products.toProduct(page.data[0]);
+  assert.equal(product.stock, 18);
+  assert.equal(product.price, 149);
+  assert.equal(product.discount, 20);
+  assert.deepEqual(Array.from(product.sizes), ["M"]);
+  assert.equal(product.apiSource.variants[0].id, "variant-blue");
+  assert.equal(product.apiSource.variants[0].colorId, null);
+  assert.equal(product.apiSource.variants[0].availableStock, 18);
+  assert.deepEqual({ ...await products.productStockSummary(page, new URLSearchParams()) }, { all: 1, outOfStock: 0, lowStock: 0 });
+  await assert.rejects(products.saveProduct(product, product), /without a colour assignment/);
+  const linked = products.toProduct({ ...input, variants: [{ ...input.variants[0], color_id: "real-color-id" }] });
+  assert.equal(linked.apiSource.variants[0].colorId, "real-color-id");
+  assert.throws(() => products.toProduct({ ...input, available_stock: "18" }), /documented catalog shape/);
+});
+
 test("product update keeps variant and asset IDs, preserves GHS amounts, and sends If-Match", async () => {
   const product = products.toProduct(record);
   product.price = 220;

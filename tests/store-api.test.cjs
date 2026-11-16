@@ -147,6 +147,41 @@ test("discounted storefront prices retain the original price and discount", () =
   assert.equal(product.discount, 20);
 });
 
+test("snake-case inventory and variant colours enable real storefront selections", () => {
+  const item = catalog.parseProduct({ id: "shirt", slug: "shirt", name: "Shirt", price: { amount: 149, currency: "GHS", discount_amount: 20 }, colors: [], images: [], variants: [
+    { id: "blue-m", color: "blue", size: "M", available_stock: 3, image_url: "https://example.com/blue.jpg" },
+    { id: "blue-l", color: "blue", size: "L", available_stock: 0 },
+    { id: "white-m", color: "white", size: "M", available_stock: 2 },
+  ] });
+  assert.equal(item.inStock, true);
+  assert.equal(item.color, "blue");
+  assert.equal(item.colors.length, 2);
+  assert.equal(item.colors[0].image, "https://example.com/blue.jpg");
+  assert.deepEqual(Array.from(item.availableSizes), ["M"]);
+  assert.equal(item.variants.find(variant => variant.id === "blue-m").availableStock, 3);
+  assert.equal(item.price, 129);
+  const empty = catalog.parseProduct({ id: "empty", slug: "empty", name: "Empty", price: { amount: 10, currency: "GHS" }, variants: [{ id: "empty-m", size: "M", color: "blue", available_stock: 0 }] });
+  assert.equal(empty.inStock, false);
+});
+
+test("public in_stock flags and colour keys enable available styles while sold-out stays unavailable", () => {
+  const base = { id: "shirt", slug: "shirt", name: "Shirt", price: { amount: 149, currency: "GHS" }, colors: [], images: [] };
+  const shirt = catalog.parseProduct({ ...base, variants: [
+    { id: "blue-small", colorId: "blue", size: "Small", in_stock: true },
+    { id: "white-medium", colorId: "white", size: "Medium", in_stock: false },
+  ] });
+  assert.equal(shirt.inStock, true);
+  assert.equal(shirt.color, "blue");
+  assert.equal(shirt.colors.length, 2);
+  assert.deepEqual(Array.from(shirt.availableSizes), ["Small"]);
+  assert.equal(shirt.variants[0].availableStock, 1);
+  assert.equal(shirt.variants[1].availableStock, 0);
+  const dress = catalog.parseProduct({ ...base, colors: [{ id: "colour-id", name: "sea blue" }], variants: [{ id: "dress-8", colorId: "colour-id", size: "8", in_stock: true }] });
+  assert.equal(dress.variants[0].color, "sea blue");
+  assert.equal(dress.inStock, true);
+  assert.equal(catalog.parseProduct({ ...base, variants: [{ id: "sold-out", colorId: "white", size: "L", in_stock: false }] }).inStock, false);
+});
+
 test("storefront uses GHS amounts and the API image_url cover", () => {
   const image_url = "https://storage.googleapis.com/example/kaftan.jpg";
   const parsed = catalog.parseProduct({ ...product, image_url, price: { amount: 700, currency: "GHS" } });

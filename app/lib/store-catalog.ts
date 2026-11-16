@@ -5,13 +5,24 @@ function object(value: unknown): Record<string, unknown> { if (!value || typeof 
 export function parseProduct(value: unknown): Product {
   const row = object(value); const price = object(row.price);
   if (typeof row.id !== "string" || typeof row.slug !== "string" || typeof row.name !== "string" || !Number.isInteger(price.amount) || price.currency !== "GHS") throw new Error("The store returned an unsupported product or price.");
-  const discount = typeof price.discountAmount === "number" && Number.isInteger(price.discountAmount) && price.discountAmount > 0 && price.discountAmount < Number(price.amount) ? price.discountAmount : 0;
+  const discountValue = price.discountAmount ?? price.discount_amount;
+  const discount = typeof discountValue === "number" && Number.isInteger(discountValue) && discountValue > 0 && discountValue < Number(price.amount) ? discountValue : 0;
   const images = Array.isArray(row.images) ? row.images.map(object) : [];
   const colors = Array.isArray(row.colors) ? row.colors.map((value) => {
     const color = object(value); const photo = images.find((image) => Array.isArray(color.imageIds) && color.imageIds.includes(image.id));
     return { id: String(color.id ?? ""), name: String(color.name ?? ""), hex: typeof color.hex === "string" ? color.hex : "#750d27", image: typeof color.image_url === "string" && color.image_url ? color.image_url : typeof photo?.url === "string" ? photo.url : undefined };
   }) : [];
-  const variants = Array.isArray(row.variants) ? row.variants.map((value) => { const variant = object(value); return { id: String(variant.id ?? ""), size: String(variant.size ?? ""), color: colors.find((color) => color.id === variant.colorId)?.name ?? String(variant.color ?? ""), availableStock: typeof variant.availableStock === "number" ? variant.availableStock : variant.inStock === true ? 1 : 0 }; }) : [];
+  const rawVariants = Array.isArray(row.variants) ? row.variants.map(object) : [];
+  const variants = rawVariants.map((variant) => {
+    const stock = variant.availableStock ?? variant.available_stock;
+    return { id: String(variant.id ?? ""), size: String(variant.size ?? ""), color: colors.find((color) => color.id === (variant.colorId ?? variant.color_id))?.name ?? String(variant.color ?? variant.colorId ?? variant.color_id ?? ""), availableStock: typeof stock === "number" ? stock : (variant.inStock ?? variant.in_stock) === true ? 1 : 0 };
+  });
+  for (const [index, variant] of variants.entries()) {
+    if (variant.color && !colors.some(color => color.name === variant.color)) {
+      const source = rawVariants[index];
+      colors.push({ id: String(source.colorId ?? source.color_id ?? ""), name: variant.color, hex: typeof source.hex === "string" ? source.hex : "#750d27", image: typeof source.image_url === "string" ? source.image_url : undefined });
+    }
+  }
   const category = row.category && typeof row.category === "object" ? String(object(row.category).name ?? "") : typeof row.category === "string" ? row.category : "";
   const cover = typeof row.image === "object" && row.image ? object(row.image).url : row.image;
   return { id: row.slug, apiId: row.id, slug: row.slug, name: row.name, description: typeof row.description === "string" ? row.description : "", price: Number(price.amount) - discount, originalPrice: discount ? Number(price.amount) : undefined, discount, category,
