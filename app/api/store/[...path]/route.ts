@@ -44,7 +44,7 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
       } else { body = JSON.stringify(input); headers.set("Content-Type", "application/json"); }
     }
     if (me) method = "POST";
-    const origin = (process.env.STORE_API_ORIGIN || "https://elizkloset.onrender.com").replace(/\/$/, "");
+    const origin = (process.env.STORE_API_ORIGIN || "https://elizkloset-docker.onrender.com").replace(/\/$/, "");
     let resource = read ? `/api/v1/${key.split("/").map(encodeURIComponent).join("/")}` : writes[key];
     let profileId: string | number | undefined;
     let identity: Record<string, unknown> = {};

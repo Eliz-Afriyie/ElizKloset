@@ -1,5 +1,5 @@
-﻿.contact-banner .shop-banner-photo { left: auto; right: 18%; width: clamp(220px,25vw,360px); }
-.contact-banner .shop-banner-photo img { object-fit: cover; object-position: center 18%; }
+.contact-banner .shop-banner-photo { left: auto; right: 18%; width: clamp(220px,25vw,360px); }
+.contact-banner .shop-banner-photo img { object-fit: cover; object-position: center; }
 .contact-content { display: grid; grid-template-columns: .85fr 1.2fr; gap: clamp(30px,6vw,90px); max-width: 1180px; padding-top: 42px; padding-bottom: 45px; }
 .contact-methods h2 { font: 35px/1.15 Georgia,serif; color: var(--burgundy); margin: 12px 0 16px; }
 .contact-methods > p:not(.eyebrow) { color: #796658; font-size: 13px; line-height: 1.8; margin-bottom: 24px; }

@@ -9,7 +9,7 @@ This is a backend-independent proposal for the existing frontend, not a descript
 ## Conventions
 
 - Base path: `/api/v1`. JSON requests and responses; timestamps are ISO 8601 UTC.
-- Prices are integer pesewas: `{ "amount": 16000, "currency": "GHS" }` means GH₵160. Current catalog examples use GH₵160 dresses and GH₵220 two pieces; the backend stores each product's price independently.
+- Product prices are GHS: `{ "amount": 700, "currency": "GHS" }` means GH₵700. Product discounts and price filters use the same unit. Product covers use `image_url`, falling back to `images[0].url`. Current catalog examples use GH₵160 dresses and GH₵220 two pieces; the backend stores each product's price independently.
 - Use stable IDs and slugs, not display labels, in requests. Treat illustrative IDs below as examples.
 - Single resource: `{ "data": resource }`. Lists: `{ "data": [], "pagination": {} }` where applicable.
 - Guest cart/wishlist ownership comes from a secure session cookie, never a client-supplied owner ID. Authenticated users can later merge guest state at login.
@@ -79,7 +79,7 @@ Feature flags become true only when the corresponding backend capability is conf
   "description": "Corporate wrap dress in royal blue.",
   "category": { "id": "dresses", "name": "Dresses" },
   "collections": ["new-arrivals"],
-  "price": { "amount": 16000, "currency": "GHS" },
+  "price": { "amount": 160, "currency": "GHS" },
   "images": [
     { "id": "img-blue", "url": "/images/ElizKloset Royal Blue Corporate Dress.png", "alt": "Royal blue corporate dress" }
   ],
@@ -113,7 +113,7 @@ type Product = {
 
 The example variant availability is illustrative; current inventory and sizes are preview data. Return every actual purchasable size/color combination, each with its own stable variant ID. Use string sizes to support future shirts, shoes and essentials. Product `inStock` is true when at least one variant can be purchased. The server owns price and availability; the client does not submit either when adding to cart.
 
-The Champagne Skirt Two Piece (`chic-office`) costs `22000` and has Champagne, Black, Green, Red and White color options. Where a color has no photo, return `imageIds: []`; the frontend can retain the original photo with “Shown in Champagne.” Do not label the original photo as another color.
+The Champagne Skirt Two Piece (`chic-office`) costs `220` and has Champagne, Black, Green, Red and White color options. Where a color has no photo, return `imageIds: []`; the frontend can retain the original photo with “Shown in Champagne.” Do not label the original photo as another color.
 
 ## Home
 
@@ -181,7 +181,7 @@ GET /api/v1/products?limit=8&sort=featured
 Filtered example:
 
 ```http
-GET /api/v1/products?category=dresses&collection=new-arrivals&size=10&color=black&maxPrice=22000&inStock=true&sort=price-asc&limit=8
+GET /api/v1/products?category=dresses&collection=new-arrivals&size=10&color=black&maxPrice=220&inStock=true&sort=price-asc&limit=8
 ```
 
 Supported parameters:
@@ -193,7 +193,7 @@ Supported parameters:
 | `collection` | Repeat `new-arrivals` or `best-sellers` |
 | `size` | Repeat string sizes, e.g. `size=10&size=12` |
 | `color` | Repeat stable color IDs |
-| `minPrice`, `maxPrice` | Integer pesewas; current UI exposes maximum price |
+| `minPrice`, `maxPrice` | GHS; current UI exposes maximum price |
 | `inStock` | Boolean; omit for all |
 | `sort` | `featured`, `newest`, `price-asc`, `price-desc`, `name-asc` |
 | `limit` | 8 initially, 4 for subsequent loads; server maximum 50 |
@@ -569,9 +569,11 @@ type ProductWrite = {
 | --- | --- | --- |
 | `GET /admin/products` | `q, categoryId, stock, status, createdFrom, createdTo, sort, page, pageSize` | 200 `Page<AdminProductResource>` plus summary below |
 | `GET /admin/products/{id}` | None | 200 `{ data: AdminProductResource }` |
-| `POST /admin/products` | `ProductWrite` | 201 `{ data: AdminProductResource }`, Location header |
+| `POST /admin/products` | Multipart fields; see current integration note below | 201 `{ data: AdminProductResource }`, Location header |
 | `PATCH /admin/products/{id}` | Partial `ProductWrite`, If-Match | 200 updated product |
 | `DELETE /admin/products/{id}` | If-Match | 204; soft delete, preserve order history |
+
+Current multipart integration: product creation uses `price_amount`, `price_currency`, `category_id`, `status`, repeated binary `product_images` and JSON-object strings for repeated `colors`/`variants`. Collection membership and existing colour asset IDs are applied through versioned JSON PATCH after draft creation. Create does not accept `collection_ids`, `image_ids`, `product_status`, `file` or `alt`. Completion failures retain the draft for retry. See [ADMIN-INTEGRATION.md](ADMIN-INTEGRATION.md).
 
 Search `q` matches name/ID. Stock filter: `out` means availableStock = 0; `low` means 1–3; `available` means >3; omitted means all. Category/status are exact IDs/enums. `summary: { all: number; outOfStock: number; lowStock: number }` applies search/category/status/date but excludes the stock filter. Pagination total includes every filter. Total stock sums variants.
 
@@ -596,7 +598,7 @@ Color IDs are stable product-scoped keys. Variant IDs are globally unique server
 
 `stock` is physical on-hand units including reservations; `availableStock = stock - reservedStock`. Confirmed payment decrements stock and reservedStock exactly once. Admin stock writes are absolute and may not reduce stock below reservedStock. Checkout and admin inventory writes must serialize and advance product version to prevent lost updates. The current wizard needs no separate inventory endpoint.
 
-Validate name 1–150, description max 3000, positive integer price <=100000000 pesewas, integer quantities 0–1000000, valid six-digit hex, unique color names case-insensitively, unique color/size pairs and nonempty size strings max 32. Each color requires a size. Slugs are unique lowercase hyphenated strings, generated if omitted on create. All referenced assets/taxonomy must exist in this store. Active products require an active category, active assigned collections, a cover image and at least one variant; zero stock remains visible as sold out.
+Validate name 1–150, description max 3000, positive integer price <=100000000 GHS, integer quantities 0–1000000, valid six-digit hex, unique color names case-insensitively, unique color/size pairs and nonempty size strings max 32. Each color requires a size. Slugs are unique lowercase hyphenated strings, generated if omitted on create. All referenced assets/taxonomy must exist in this store. Active products require an active category, active assigned collections, a cover image and at least one variant; zero stock remains visible as sold out.
 
 Draft/inactive/deleted products disappear from all public catalog sources and return 404 on direct public reads. Retain unavailable cart lines for removal. Exclude hidden products from public wishlist payloads, including photos/descriptions. Newly created active products must appear through the backend, independent of browser preview visibility.
 
@@ -631,8 +633,8 @@ For `{kind}` = `categories` or `collections`:
 | `GET /admin/{kind}` | `q, status, page, pageSize` | 200 `Page<TaxonomyResource>` |
 | `GET /admin/{kind}/{id}` | None | 200 taxonomy resource |
 | `GET /admin/{kind}/{id}/products` | `page, pageSize` | 200 `Page<AdminProductResource>` for modal assignments |
-| `POST /admin/{kind}` | `TaxonomyWrite` | 201 taxonomy resource |
-| `PATCH /admin/{kind}/{id}` | Partial `TaxonomyWrite`, If-Match | 200 taxonomy resource |
+| `POST /admin/{kind}` | Multipart `name`, `description`, `status`, optional `file`/`alt` | 201 taxonomy resource |
+| `PATCH /admin/{kind}/{id}` | Multipart `name`, `description`, `status`, optional replacement `file`/`alt`, If-Match | 200 taxonomy resource |
 | `DELETE /admin/{kind}/{id}` | If-Match | 204 |
 
 Name/slug 1–100, unique case-insensitively within kind; description max 3000; slugs lowercase hyphenated. Category deletion is blocked while any non-deleted product is assigned, including drafts (409 `CATEGORY_IN_USE`). Collection deletion detaches memberships atomically. Setting taxonomy to draft is blocked while active products reference it (409 `TAXONOMY_IN_USE`). Reassign/deactivate first.
@@ -743,7 +745,7 @@ Currency/timezone/connections are read-only in this version. Settings storeName/
 - Use the shared error envelope above and indexed paths such as `variants.0.stock`. Add `PRECONDITION_REQUIRED` (428), `VERSION_CONFLICT` (412), `FILE_TOO_LARGE` (413), `UNSUPPORTED_MEDIA_TYPE` (415). Unexpected failures use 500 `INTERNAL_ERROR`; include requestId, never stack traces. 429 includes Retry-After.
 - Invalidate public catalog/content/rating caches after relevant admin writes and stock/payment changes. Cart/checkout revalidate publication/stock regardless of cached cards. Private/admin responses must stay outside shared/service-worker caches.
 - Public visibility rules apply consistently to home, shop, recommendations, direct product reads and wishlist. Unavailable cart lines remain removable and block checkout. No new backend product should require a frontend static-catalog edit to appear.
-- Frontend adapters must convert current major-unit prices to integer pesewas; grouped color/size rows to stable purchasable variants; empty optional strings to null; UI payment/status labels to machine enums. Preserve opaque IDs from responses. Skeletons, dialogs, wizard steps and list/grid toggles require no dedicated endpoints.
+- Frontend product adapters must preserve GHS prices without unit conversion; grouped color/size rows to stable purchasable variants; empty optional strings to null; UI payment/status labels to machine enums. Preserve opaque IDs from responses. Skeletons, dialogs, wizard steps and list/grid toggles require no dedicated endpoints.
 - Existing local cart migration, if required: `POST /cart/import` with Idempotency-Key and `{ items: { productId, colorId, size, quantity }[] }` → updated Cart with adjustments. Resolve legacy color names through an explicit migration map; reject ambiguous mappings with 422. Never guess variant IDs. This import is optional rollout work, not the normal add-item API.
 - Do not migrate invented orders/customers/revenue/stock or sample testimonials as real production data. Deliberately map static catalog IDs and approved assets only.
 - Backend handoff deliverables: OpenAPI 3.1 matching the agreed contract, staging base URL, cookie/CORS/CSRF settings, fixtures and test accounts per role. Cover empty lists, sold-out combinations, stale edits, hidden products, reservation expiry, payment retries and duplicate webhooks.

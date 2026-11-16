@@ -1,11 +1,12 @@
 "use client";
+import ErrorToast from "../../components/ErrorToast";
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import Icon from "../../components/Icon";
 import Skeleton, { type SkeletonVariant } from "../../components/Skeleton";
 
 export function ApiStatus({ loading, error, retry, variant = "table" }: { loading: boolean; error: string; retry: () => void; variant?: SkeletonVariant }) {
-  return <>{loading && <Skeleton variant={variant} label="Loading store data" />}{error && <p className="admin-form-error" role="alert">{error} <button type="button" className="admin-text-button" onClick={retry}>Retry</button></p>}</>;
+  return <>{loading && <Skeleton variant={variant} label="Loading store data" />}<ErrorToast message={error} onRetry={retry} /></>;
 }
 export function ApiPagination({ page, total, totalPages, loading, onChange }: { page: number; total: number; totalPages: number; loading: boolean; onChange: (page: number) => void }) {
   return <nav className="admin-pagination" aria-label="Result pagination"><p>{total} records</p><div><button type="button" disabled={loading || page <= 1} onClick={() => onChange(page - 1)}>Previous</button><span>Page {page} of {Math.max(1, totalPages)}</span><button type="button" disabled={loading || page >= totalPages} onClick={() => onChange(page + 1)}>Next</button></div></nav>;

@@ -20,7 +20,7 @@ test("store proxy rejects foreign writes, traversal and privileged customer/admi
 });
 test("public filters pass through without leaking admin cookies or tokens", async () => {
   globalThis.fetch = async (url, options) => {
-    assert.equal(url, "https://elizkloset.onrender.com/api/v1/products?category=dresses&maxPrice=22000&cursor=next");
+    assert.equal(url, "https://elizkloset-docker.onrender.com/api/v1/products?category=dresses&maxPrice=22000&cursor=next");
     assert.equal(options.headers.get("authorization"), null);
     assert.equal(options.headers.get("cookie"), null);
     assert.equal(options.cache, "no-store");
@@ -31,7 +31,7 @@ test("public filters pass through without leaking admin cookies or tokens", asyn
 });
 test("customer login uses documented form fields and isolates tokens in HttpOnly cookies", async () => {
   globalThis.fetch = async (url, options) => {
-    assert.equal(url, "https://elizkloset.onrender.com/auth/token");
+    assert.equal(url, "https://elizkloset-docker.onrender.com/auth/token");
     assert.equal(options.headers.get("content-type"), "application/x-www-form-urlencoded");
     assert.equal(new URLSearchParams(options.body).get("username"), "customer@example.com");
     assert.equal(new URLSearchParams(options.body).get("password"), "fake-password");
@@ -45,7 +45,7 @@ test("customer login uses documented form fields and isolates tokens in HttpOnly
 });
 test("session restoration sends only the customer token in the documented body", async () => {
   globalThis.fetch = async (url, options) => {
-    assert.equal(url, "https://elizkloset.onrender.com/auth/me");
+    assert.equal(url, "https://elizkloset-docker.onrender.com/auth/me");
     assert.equal(options.method, "POST"); assert.equal(JSON.parse(options.body).access_token, "customer");
     assert.equal(options.headers.get("cookie"), "session=user");
     return Response.json({ id: "user-1", email: "customer@example.com" });
@@ -56,7 +56,7 @@ test("session restoration sends only the customer token in the documented body",
 test("registration, OTP, password reset and contact requests map to customer endpoints", async () => {
   const cases = [["auth/register", "/api/v1/users/", "POST"], ["auth/verify-otp", "/api/v1/users/verify-otp", "POST"], ["auth/verify-phone-otp", "/api/v1/users/verify-phone-otp", "POST"], ["auth/reset-password", "/api/v1/users/reset_password", "PUT"], ["contact/messages", "/api/v1/contact/messages", "POST"], ["newsletter/subscriptions", "/api/v1/newsletter/subscriptions", "POST"]];
   for (const [path, upstream, method] of cases) {
-    globalThis.fetch = async (url, options) => { assert.equal(url, "https://elizkloset.onrender.com" + upstream); assert.equal(options.method, method); assert.equal(JSON.parse(options.body).target, "customer@example.com"); return Response.json({}); };
+    globalThis.fetch = async (url, options) => { assert.equal(url, "https://elizkloset-docker.onrender.com" + upstream); assert.equal(options.method, method); assert.equal(JSON.parse(options.body).target, "customer@example.com"); return Response.json({}); };
     const r = await proxy.POST(new NextRequest("https://shop.example/api/store/" + path, { method: "POST", headers: { Origin: "https://shop.example" }, body: '{"target":"customer@example.com"}' }), context(path));
     assert.equal(r.status, 200);
   }
@@ -74,16 +74,16 @@ test("profile edits use the verified customer ID and discard client-supplied rol
   let calls = 0;
   globalThis.fetch = async (url, options) => {
     calls++;
-    if (calls === 1) { assert.equal(url, "https://elizkloset.onrender.com/auth/me"); return Response.json({ data: { id: "own-user", email: "customer@example.com" } }); }
-    assert.equal(url, "https://elizkloset.onrender.com/api/v1/users/own-user"); assert.equal(options.method, "PUT");
+    if (calls === 1) { assert.equal(url, "https://elizkloset-docker.onrender.com/auth/me"); return Response.json({ data: { id: "own-user", email: "customer@example.com" } }); }
+    assert.equal(url, "https://elizkloset-docker.onrender.com/api/v1/users/own-user"); assert.equal(options.method, "PUT");
     const fields = JSON.parse(options.body); assert.equal(fields.id, undefined); assert.equal(fields.role, undefined); assert.equal(fields.email, "customer@example.com");
     return Response.json({});
   };
   const r = await proxy.POST(new NextRequest("https://shop.example/api/store/auth/profile", { method: "POST", headers: { Origin: "https://shop.example", Cookie: "ek_customer_access=customer" }, body: JSON.stringify({ id: "another-user", role: "admin", email: "customer@example.com", first_name: "Customer", last_name: "Test", phone: "" }) }), context("auth/profile"));
   assert.equal(r.status, 200); assert.equal(calls, 2);
 });
-const product = { id: "product-1", slug: "office-dress", name: "Office dress", description: "A dress", price: { amount: 16000, currency: "GHS" }, category: { name: "Dresses" }, images: [{ id: "asset-1", url: "/images/hero-burgundy.png" }], colors: [{ id: "wine", name: "Burgundy", hex: "#750d27", imageIds: ["asset-1"] }], variants: [{ id: "variant-1", colorId: "wine", size: "M", inStock: true }, { id: "variant-2", colorId: "wine", size: "L", inStock: false }], badges: [] };
-test("product mapping converts pesewas, preserves string sizes and real variant availability", () => {
+const product = { id: "product-1", slug: "office-dress", name: "Office dress", description: "A dress", price: { amount: 160, currency: "GHS" }, category: { name: "Dresses" }, images: [{ id: "asset-1", url: "/images/hero-burgundy.png" }], colors: [{ id: "wine", name: "Burgundy", hex: "#750d27", imageIds: ["asset-1"] }], variants: [{ id: "variant-1", colorId: "wine", size: "M", inStock: true }, { id: "variant-2", colorId: "wine", size: "L", inStock: false }], badges: [] };
+test("product mapping preserves GHS amounts, preserves string sizes and real variant availability", () => {
   const parsed = catalog.parseProduct(product);
   assert.equal(parsed.price, 160); assert.equal(parsed.apiId, "product-1"); assert.equal(parsed.id, "office-dress");
   assert.deepEqual(Array.from(parsed.availableSizes), ["M"]); assert.equal(parsed.bestSeller, false); assert.equal(parsed.isNew, false);
@@ -111,8 +111,8 @@ test("full profile reads use the verified account ID and omit password/OTP/inter
   let calls = 0;
   globalThis.fetch = async (url, options) => {
     calls++;
-    if (calls === 1) { assert.equal(url, "https://elizkloset.onrender.com/auth/me"); assert.equal(JSON.parse(options.body).access_token, "customer"); return Response.json({ id: "own-user", email: "customer@example.com" }); }
-    assert.equal(url, "https://elizkloset.onrender.com/api/v1/users/own-user"); assert.equal(options.method, "GET"); assert.equal(options.body, undefined);
+    if (calls === 1) { assert.equal(url, "https://elizkloset-docker.onrender.com/auth/me"); assert.equal(JSON.parse(options.body).access_token, "customer"); return Response.json({ id: "own-user", email: "customer@example.com" }); }
+    assert.equal(url, "https://elizkloset-docker.onrender.com/api/v1/users/own-user"); assert.equal(options.method, "GET"); assert.equal(options.body, undefined);
     return Response.json({ id: "own-user", email: "customer@example.com", first_name: "Customer", last_name: "Example", phone: "+233200000000", password: "private-password-hash", otp_verifications: ["private-code"], failed_login_attempts: 2 });
   };
   const r = await proxy.GET(new NextRequest("https://shop.example/api/store/auth/profile?id=another-user", { headers: { Cookie: "ek_customer_access=customer" } }), context("auth/profile"));
@@ -133,4 +133,28 @@ test("sign-out clears proxy cookies when the backend session has already expired
   globalThis.fetch = async () => Response.json({ error: { message: "Expired" } }, { status: 401 });
   const r = await proxy.POST(new NextRequest("https://shop.example/api/store/auth/sign-out", { method: "POST", headers: { Origin: "https://shop.example", Cookie: "ek_customer_access=expired; ek_customer_backend_session=expired" }, body: "{}" }), context("auth/sign-out"));
   assert.equal(r.status, 401); assert.ok(r.headers.getSetCookie().some((cookie) => cookie.includes("ek_customer_access=") && cookie.includes("Max-Age=0")));
+});
+
+test("store product pages support counted size facets returned by the public API", () => {
+  const page = catalog.parseProductPage({ data: [], pagination: { total: 0, nextCursor: null, hasMore: false }, facets: { sizes: [{ value: "10", count: 2 }, { value: "12", count: 1 }, "One size"] } });
+  assert.deepEqual(Array.from(page.facets.sizes), ["10", "12", "One size"]);
+});
+
+test("discounted storefront prices retain the original price and discount", () => {
+  const product = catalog.parseProduct({ id: "discounted", slug: "discounted", name: "Dress", price: { amount: 160, currency: "GHS", discountAmount: 20 }, variants: [], images: [], colors: [] });
+  assert.equal(product.price, 140);
+  assert.equal(product.originalPrice, 160);
+  assert.equal(product.discount, 20);
+});
+
+test("storefront uses GHS amounts and the API image_url cover", () => {
+  const image_url = "https://storage.googleapis.com/example/kaftan.jpg";
+  const parsed = catalog.parseProduct({ ...product, image_url, price: { amount: 700, currency: "GHS" } });
+  assert.equal(parsed.price, 700);
+  assert.equal(parsed.image, image_url);
+  assert.equal(catalog.parseProduct({ ...product, images: [], image_url }).image, image_url);
+  const discounted = catalog.parseProduct({ ...product, image_url, price: { amount: 700, currency: "GHS", discountAmount: 600 } });
+  assert.equal(discounted.originalPrice, 700);
+  assert.equal(discounted.price, 100);
+  assert.equal(discounted.discount, 600);
 });

@@ -99,3 +99,24 @@ html:has(dialog[open]) { overflow: hidden; }
 .account-help-actions .text-button { margin: 0; text-align: left; }
 .account-help-actions .text-button:last-child { margin-left: auto; text-align: right; }
 @media(max-width: 430px) { .account-help-actions { gap: 12px; font-size: 12px; } }
+
+.shopping-dialog.detail-dialog { width: min(1040px, calc(100vw - 32px)); padding: 28px; }
+.detail-dialog .product-detail { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; }
+.detail-dialog .product-detail > div { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .shopping-dialog.detail-dialog { padding: 20px; } .detail-dialog .product-detail { grid-template-columns: minmax(0, 1fr); gap: 24px; } .detail-dialog .detail-photo { max-width: 360px; margin-inline: auto; } }
+
+.account-verification-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px 24px; margin-top: 24px; }
+.account-verification-actions:empty { display: none; }
+.account-verification-actions .text-button { margin: 0; padding-block: 8px; }
+.account-verification-actions + .account-message { margin-top: 24px; padding: 16px; background: #f5eadc; border-radius: 8px; line-height: 1.7; }
+.account-form .verification-code { border: 0; padding: 0; margin: 0; min-width: 0; }
+.account-form .verification-code legend { padding: 0; margin-bottom: 10px; }
+.verification-code-boxes { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: clamp(6px, 2vw, 12px); }
+.account-form .verification-code-boxes input { text-align: center; height: 58px; padding: 8px 0; font-size: 24px; font-weight: 500; }
+
+/* Keep homepage categories compact and horizontally browsable. */
+.collections .category-scroll { display: grid; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 220px; justify-content: start; gap: 18px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; padding: 4px 0 14px; scrollbar-width: thin; scrollbar-color: #b48c72 #f1e4d5; }
+.category-scroll .collection-card { scroll-snap-align: start; min-width: 0; }
+.collections .category-scroll .collection-card .photo { width: 100%; height: 150px; }
+.collections .category-scroll .collection-card h3 { font-size: 16px; line-height: 1.3; margin-top: 10px; }
+@media (max-width: 560px) { .collections .category-scroll { grid-auto-columns: 160px; gap: 12px; } .collections .category-scroll .collection-card .photo { height: 125px; } .collections .category-scroll .collection-card h3 { font-size: 14px; } }

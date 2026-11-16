@@ -1,5 +1,5 @@
 export class AdminApiError extends Error {
-  constructor(message: string, public status: number) { super(message); }
+  constructor(message: string, public status: number, public fields: Record<string, string[]> = {}) { super(message); }
 }
 
 export async function adminRequest<T>(path: string, options: { method?: string; body?: unknown; version?: number; signal?: AbortSignal } = {}): Promise<T> {
@@ -21,13 +21,26 @@ export async function adminRequest<T>(path: string, options: { method?: string; 
   let data;
   try { data = text ? JSON.parse(text) : undefined; } catch { throw new AdminApiError("The API returned an unreadable response.", response.status); }
   if (!response.ok) {
-    if (response.status === 401 && !path.startsWith("auth/")) window.dispatchEvent(new Event("admin-session-expired"));
+    if (response.status === 401 && !path.startsWith("auth/")) window.dispatchEvent(new Event("admin-session-check"));
     const detail = data?.detail;
+    const fields: Record<string, string[]> = {};
+    if (data?.error?.fields && typeof data.error.fields === "object" && !Array.isArray(data.error.fields)) {
+      for (const [field, issue] of Object.entries(data.error.fields)) {
+        const messages = (Array.isArray(issue) ? issue : [issue]).filter((item): item is string => typeof item === "string");
+        if (messages.length) fields[field] = messages;
+      }
+    }
+    if (Array.isArray(detail)) for (const item of detail) {
+      if (!Array.isArray(item?.loc) || typeof item.msg !== "string") continue;
+      const field = item.loc.filter((part: unknown, index: number) => index !== 0 || !["body", "query", "path"].includes(String(part))).join(".");
+      if (field) fields[field] = [...(fields[field] ?? []), item.msg];
+    }
     const validation = Array.isArray(detail) ? detail.map((item: { loc?: (string | number)[]; msg?: string }) => `${item.loc?.slice(1).join(".") ?? "Field"}: ${item.msg ?? "Invalid value"}`).join("; ") : undefined;
-    const message = data?.error?.message ?? validation ?? (typeof detail === "string" ? detail : undefined);
+    let message = data?.error?.message ?? validation ?? (typeof detail === "string" ? detail : undefined);
+    if (typeof message === "string" && /highlighted fields/i.test(message) && !Object.keys(fields).length) message = "Your changes could not be saved. The server did not identify a field to correct. Please contact the store administrator with the reference below.";
     const requestId = data?.error?.requestId;
     const reference = typeof requestId === "string" && /^[a-zA-Z0-9_-]{1,128}$/.test(requestId) ? ` Reference: ${requestId}.` : "";
-    throw new AdminApiError((message || (response.status === 412 ? "This record changed. Reload it before saving again." : response.status === 403 ? "Your staff account does not have permission for this action." : `Request failed (${response.status}). Please retry.`)) + reference, response.status);
+    throw new AdminApiError((message || (response.status === 412 ? "This record changed. Reload it before saving again." : response.status === 403 ? "Your staff account does not have permission for this action." : `Request failed (${response.status}). Please retry.`)) + reference, response.status, fields);
   }
   return data as T;
 }

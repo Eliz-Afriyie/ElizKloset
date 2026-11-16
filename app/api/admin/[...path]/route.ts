@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const DEFAULT_API = "https://elizkloset.onrender.com/api/v1";
+const DEFAULT_API = "https://elizkloset-docker.onrender.com/api/v1";
 const TOKEN_COOKIE = "ek_admin_access";
 const CSRF_COOKIE = "ek_proxy_csrf";
-const allowed = new Set(["auth", "products", "assets", "categories", "collections", "orders", "customers", "dashboard", "pages", "site", "reviews", "settings", "staff"]);
+const allowed = new Set(["auth", "products", "assets", "gallery", "categories", "collections", "orders", "customers", "dashboard", "pages", "site", "reviews", "settings", "staff"]);
 
 async function proxy(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params;

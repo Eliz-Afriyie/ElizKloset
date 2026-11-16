@@ -5,26 +5,27 @@ function object(value: unknown): Record<string, unknown> { if (!value || typeof 
 export function parseProduct(value: unknown): Product {
   const row = object(value); const price = object(row.price);
   if (typeof row.id !== "string" || typeof row.slug !== "string" || typeof row.name !== "string" || !Number.isInteger(price.amount) || price.currency !== "GHS") throw new Error("The store returned an unsupported product or price.");
+  const discount = typeof price.discountAmount === "number" && Number.isInteger(price.discountAmount) && price.discountAmount > 0 && price.discountAmount < Number(price.amount) ? price.discountAmount : 0;
   const images = Array.isArray(row.images) ? row.images.map(object) : [];
   const colors = Array.isArray(row.colors) ? row.colors.map((value) => {
     const color = object(value); const photo = images.find((image) => Array.isArray(color.imageIds) && color.imageIds.includes(image.id));
-    return { id: String(color.id ?? ""), name: String(color.name ?? ""), hex: typeof color.hex === "string" ? color.hex : "#750d27", image: typeof photo?.url === "string" ? photo.url : undefined };
+    return { id: String(color.id ?? ""), name: String(color.name ?? ""), hex: typeof color.hex === "string" ? color.hex : "#750d27", image: typeof color.image_url === "string" && color.image_url ? color.image_url : typeof photo?.url === "string" ? photo.url : undefined };
   }) : [];
   const variants = Array.isArray(row.variants) ? row.variants.map((value) => { const variant = object(value); return { id: String(variant.id ?? ""), size: String(variant.size ?? ""), color: colors.find((color) => color.id === variant.colorId)?.name ?? String(variant.color ?? ""), availableStock: typeof variant.availableStock === "number" ? variant.availableStock : variant.inStock === true ? 1 : 0 }; }) : [];
   const category = row.category && typeof row.category === "object" ? String(object(row.category).name ?? "") : typeof row.category === "string" ? row.category : "";
   const cover = typeof row.image === "object" && row.image ? object(row.image).url : row.image;
-  return { id: row.slug, apiId: row.id, slug: row.slug, name: row.name, description: typeof row.description === "string" ? row.description : "", price: Number(price.amount) / 100, category,
-    bestSeller: row.bestSeller === true || (Array.isArray(row.badges) && row.badges.includes("bestseller")), isNew: row.isNew === true || (Array.isArray(row.badges) && row.badges.includes("new")), image: typeof images[0]?.url === "string" ? images[0].url : typeof cover === "string" ? cover : "", color: colors[0]?.name ?? "", hex: colors[0]?.hex ?? "#750d27", colors, variants,
+  return { id: row.slug, apiId: row.id, slug: row.slug, name: row.name, description: typeof row.description === "string" ? row.description : "", price: Number(price.amount) - discount, originalPrice: discount ? Number(price.amount) : undefined, discount, category,
+    bestSeller: row.bestSeller === true || (Array.isArray(row.badges) && row.badges.includes("bestseller")), isNew: row.isNew === true || (Array.isArray(row.badges) && row.badges.includes("new")), image: typeof row.image_url === "string" && row.image_url ? row.image_url : typeof images[0]?.url === "string" ? images[0].url : typeof cover === "string" ? cover : "", color: colors[0]?.name ?? "", hex: colors[0]?.hex ?? "#750d27", colors, variants,
     availableSizes: [...new Set(variants.filter((variant) => variant.availableStock > 0).map((variant) => variant.size))], inStock: variants.some((variant) => variant.availableStock > 0), addedOrder: 0 };
 }
 export function parseProductPage(value: unknown): ProductPage {
   const row = object(value); const page = object(row.pagination);
   if (!Array.isArray(row.data) || typeof page.total !== "number" || typeof page.hasMore !== "boolean" || (page.nextCursor !== null && typeof page.nextCursor !== "string") || (page.hasMore && !page.nextCursor)) throw new Error("The store returned unsupported product pagination.");
   const facets = row.facets ? object(row.facets) : {};
-  return { data: row.data.map(parseProduct), pagination: { total: page.total, nextCursor: page.nextCursor as string | null, hasMore: page.hasMore }, facets: { sizes: Array.isArray(facets.sizes) ? facets.sizes.map(String) : [], colors: Array.isArray(facets.colors) ? facets.colors as { name: string; hex: string }[] : [], price: facets.price ? object(facets.price) as { min: number | null; max: number | null } : { min: null, max: null } } };
+  return { data: row.data.map(parseProduct), pagination: { total: page.total, nextCursor: page.nextCursor as string | null, hasMore: page.hasMore }, facets: { sizes: Array.isArray(facets.sizes) ? facets.sizes.map((value) => typeof value === "string" ? value : String(object(value).value ?? "")).filter(Boolean) : [], colors: Array.isArray(facets.colors) ? facets.colors as { name: string; hex: string }[] : [], price: facets.price ? object(facets.price) as { min: number | null; max: number | null } : { min: null, max: null } } };
 }
 export function parseTaxonomy(value: unknown): StoreTaxonomy[] {
   const row = object(value); if (!Array.isArray(row.data)) throw new Error("The store returned unsupported categories or collections.");
-  return row.data.map((value) => { const item = object(value); if (typeof item.id !== "string" || typeof item.name !== "string" || typeof item.slug !== "string") throw new Error("The store returned an unsupported category."); return item as StoreTaxonomy; });
+  return row.data.map((value) => { const item = object(value); if (typeof item.id !== "string" || typeof item.name !== "string" || typeof item.slug !== "string") throw new Error("The store returned an unsupported category."); return { ...item, ...(typeof item.image_url === "string" && item.image_url ? { image: { url: item.image_url } } : {}) } as StoreTaxonomy; });
 }
 

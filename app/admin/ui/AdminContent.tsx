@@ -1,13 +1,18 @@
 "use client";
+import ErrorToast from "../../components/ErrorToast";
 import FormError from "../../components/FormError";
 
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { createContext, useContext, useState, type ChangeEvent, type FormEvent } from "react";
+import ContentPreview from "./ContentPreview";
+import { GalleryButton } from "./ImageGallery";
 import { adminRequest, unwrap } from "../lib/api";
 import { isObject, parsers, saveDocument, type ContentObject, type ContentValue, type StoreDocument } from "../lib/resources";
 import { useAdminQuery } from "../lib/useAdminQuery";
 import { useAdminSession } from "./AdminSession";
 import { ApiPagination, ApiStatus } from "./ApiControls";
 import AdminReviews from "./AdminReviews";
+
+const PreviewAssets = createContext<(id: string, url: string) => void>(() => {});
 
 function title(key: string) { return key.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ").replace(/^./, (first) => first.toUpperCase()); }
 const referenceKeys: Record<string, string> = { featuredProductIds: "products", upcomingCategoryIds: "categories", reviewIds: "reviews", collectionIds: "collections" };
@@ -24,6 +29,7 @@ function ReferenceList({ name, value, onChange }: { name: string; value: string[
 }
 
 function ImageField({ name, value, onChange, onUploading }: { name: string; value: ContentObject; onChange: (value: ContentValue) => void; onUploading: (delta: number) => void }) {
+  const registerAsset = useContext(PreviewAssets);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   async function upload(event: ChangeEvent<HTMLInputElement>) {
@@ -34,11 +40,12 @@ function ImageField({ name, value, onChange, onUploading }: { name: string; valu
       const body = new FormData(); body.set("file", file);
       const asset = unwrap(await adminRequest<{ data: { id: string; url: string } }>(`assets?alt=${encodeURIComponent(String(value.alt ?? ""))}`, { method: "POST", body }));
       if (!asset.id || !asset.url) throw new Error("The upload did not return an image reference.");
+      registerAsset(asset.id, asset.url);
       onChange("assetId" in value ? { ...value, assetId: asset.id } : { ...value, url: asset.url });
     } catch (error) { setError(error instanceof Error ? error.message : "Unable to upload image."); }
     finally { setUploading(false); onUploading(-1); }
   }
-  return <fieldset className="admin-content-group" disabled={uploading}><legend>{title(name)}</legend>{(value.assetId || value.url) && <p>Image selected</p>}<label>Replace image<input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(event) => void upload(event)} /></label><label>Image description<input value={String(value.alt ?? "")} onChange={(event) => onChange({ ...value, alt: event.target.value })} /></label>{uploading && <p role="status">Uploading image...</p>}{error && <FormError  className="admin-form-error">{error}</FormError>}</fieldset>;
+  return <fieldset className="admin-content-group" disabled={uploading}><legend>{title(name)}</legend>{(value.assetId || value.url) && <p>Image selected</p>}<label>Replace image<input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(event) => void upload(event)} /></label><GalleryButton onSelect={(asset) => onChange({ url: asset.url, alt: String(value.alt || "") })} /><label>Image description<input value={String(value.alt ?? "")} onChange={(event) => onChange({ ...value, alt: event.target.value })} /></label>{uploading && <p role="status">Uploading image...</p>}{error && <FormError  className="admin-form-error">{error}</FormError>}</fieldset>;
 }
 
 function blankLike(value: ContentValue): ContentValue {
@@ -47,6 +54,9 @@ function blankLike(value: ContentValue): ContentValue {
   return typeof value === "boolean" ? false : typeof value === "number" ? 0 : "";
 }
 const listTemplates: Record<string, ContentValue> = {
+  slides: { id: "", eyebrow: "", title: "", description: "", image: "", is_active: true, button_link: "/shop", button_text: "", highlights: [] },
+  highlights: { icon: "gem", text: "" },
+  benefits: { icon: "gem", title: "", description: "" },
   heroSlides: { id: "", eyebrow: "", title: "", description: "", image: { assetId: "", alt: "" }, primaryAction: { label: "", href: "" } },
   collectionCards: { id: "", title: "", subtitle: "", image: { assetId: "", alt: "" }, href: "" },
   navigation: { label: "", href: "" }, links: { label: "", href: "" },
@@ -80,11 +90,13 @@ function ContentField({ name, value, onChange, onUploading, depth = 0 }: { name:
   }
   if (typeof value === "boolean") return <label className="admin-checkbox"><input type="checkbox" checked={value} onChange={(event) => onChange(event.target.checked)} />{title(name)}</label>;
   if (typeof value === "number") return <label>{title(name)}<input type="number" value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>;
+  if (typeof value === "string" && /^(image|image_url|logo|portrait)$/.test(name)) return <div><label>{title(name)} URL<input type="url" value={value} onChange={(event) => onChange(event.target.value)} /></label><GalleryButton onSelect={(asset) => onChange(asset.url)} /></div>;
   if (/description|introduction|biography|body|story/i.test(name)) return <label>{title(name)}<textarea rows={4} value={value ?? ""} onChange={(event) => onChange(event.target.value || (value === null ? null : ""))} /></label>;
   return <label>{title(name)}<input value={value ?? ""} onChange={(event) => onChange(event.target.value || (value === null ? null : ""))} /></label>;
 }
 
 function DocumentForm({ path, document, canWrite, onSaved }: { path: string; document: StoreDocument; canWrite: boolean; onSaved: () => void }) {
+  const [assets, setAssets] = useState<Record<string, string>>({});
   const [content, setContent] = useState(Object.keys(document.content).length ? document.content : structuredClone(emptyPages[path] ?? {}));
   const [busy, setBusy] = useState(false);
   const [uploads, setUploads] = useState(0);
@@ -96,7 +108,7 @@ function DocumentForm({ path, document, canWrite, onSaved }: { path: string; doc
     catch (error) { setError(error instanceof Error ? error.message : "Could not save content."); }
     finally { setBusy(false); }
   }
-  return <form className="admin-form admin-content-editor" onSubmit={save}>{error && <FormError className="admin-form-error" >{error}</FormError>}<fieldset disabled={busy || uploads > 0 || !canWrite} inert={busy}><ContentField name="Content" value={content} onChange={(value) => setContent(value as ContentObject)} onUploading={(delta) => setUploads((value) => value + delta)} />{canWrite && <button className="admin-button" type="submit" disabled={busy || uploads > 0}>{busy ? "Saving..." : uploads ? "Uploading images..." : "Save & publish"}</button>}</fieldset></form>;
+  return <PreviewAssets.Provider value={(id, url) => setAssets((previous) => ({ ...previous, [id]: url }))}><div className="admin-content-workspace"><form className="admin-form admin-content-editor" onSubmit={save}>{error && <FormError className="admin-form-error" >{error}</FormError>}<fieldset disabled={busy || uploads > 0 || !canWrite} inert={busy}><ContentField name="Content" value={content} onChange={(value) => setContent(value as ContentObject)} onUploading={(delta) => setUploads((value) => value + delta)} />{canWrite && <button className="admin-button" type="submit" disabled={busy || uploads > 0}>{busy ? "Saving..." : uploads ? "Uploading images..." : "Save & publish"}</button>}</fieldset></form><ContentPreview content={content} assets={assets} /></div></PreviewAssets.Provider>;
 }
 
 export default function AdminContent() {
@@ -109,5 +121,5 @@ export default function AdminContent() {
   const [notice, setNotice] = useState("");
   const path = tab === "site" ? "site" : `pages/${tab}`;
   const query = useAdminQuery(tab !== "reviews" ? path : null, parsers.document);
-  return <><div className="admin-heading-actions">{[...(canRead ? ["home", "shop", "about", "contact"] : []), ...(owner ? ["site"] : []), ...(canReviews ? ["reviews"] : [])].map((key) => <button className={`admin-button ${tab !== key ? "secondary" : ""}`} key={key} onClick={() => { setTab(key); setNotice(""); }}>{title(key)}</button>)}</div>{notice && <p role="status" className="admin-notice">{notice}</p>}{tab === "reviews" ? <AdminReviews /> : <section className="admin-card"><div className="admin-card-heading"><h2>{title(tab)} content</h2><button className="admin-text-button" onClick={() => { if (window.confirm("Reload this page and discard unsaved content changes?")) query.refresh(); }}>Reload content</button></div><ApiStatus variant="form" loading={query.loading} error={query.error} retry={query.refresh} />{query.data && !query.loading && <DocumentForm key={`${path}-${query.data.version}`} path={path} document={query.data} canWrite={tab === "site" ? owner : canWrite} onSaved={() => { setNotice("Content saved and published."); query.refresh(); }} />}</section>}</>;
+  return <><div className="admin-heading-actions">{[...(canRead ? ["home", "shop", "about", "contact"] : []), ...(owner ? ["site"] : []), ...(canReviews ? ["reviews"] : [])].map((key) => <button className={`admin-button ${tab !== key ? "secondary" : ""}`} key={key} onClick={() => { setTab(key); setNotice(""); }}>{title(key)}</button>)}</div><ErrorToast message={notice} tone="success" onDismiss={() => setNotice("")} />{tab === "reviews" ? <AdminReviews /> : <section className="admin-card"><div className="admin-card-heading"><h2>{title(tab)} content</h2><button className="admin-text-button" onClick={() => { if (window.confirm("Reload this page and discard unsaved content changes?")) query.refresh(); }}>Reload content</button></div><ApiStatus variant="form" loading={query.loading} error={query.error} retry={query.refresh} />{query.data && !query.loading && <DocumentForm key={`${path}-${query.data.version}`} path={path} document={query.data} canWrite={tab === "site" ? owner : canWrite} onSaved={() => { setNotice("Content saved and published."); query.refresh(); }} />}</section>}</>;
 }

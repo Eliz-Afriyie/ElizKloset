@@ -20,8 +20,8 @@ To use another port, run `npm run dev -- --port 3100`.
 Create an optional `.env.local` in the project root to override the defaults:
 
 ```dotenv
-STORE_API_ORIGIN=https://elizkloset.onrender.com
-ADMIN_API_BASE_URL=https://elizkloset.onrender.com/api/v1
+STORE_API_ORIGIN=https://elizkloset-docker.onrender.com
+ADMIN_API_BASE_URL=https://elizkloset-docker.onrender.com/api/v1
 ```
 
 | Variable | Purpose |
@@ -46,8 +46,8 @@ These variables are server-only. Keep environment files and credentials out of G
 
 ## Admin portal
 
-- Staff sign-in and OTP verification when required by the backend.
-- OTP resend through a fresh sign-in request with password confirmation; the current API has no dedicated staff resend endpoint.
+- Staff sign-in with backend session verification. Admin MFA is temporarily disabled during development.
+- OTP verification and resend code are retained for re-enabling MFA. Resend uses a fresh sign-in request with password confirmation; there is no dedicated staff resend endpoint.
 - Collapsible navigation and permission-based management sections.
 - Dashboard metrics, sales charts, date filters, and recent orders.
 - Product, variant, stock, category, collection, and image management.
@@ -56,11 +56,13 @@ These variables are server-only. Keep environment files and credentials out of G
 
 Admin fulfilment uses `processing`, `shipped`, `delivered`, and `cancelled`. The interface also recognises `awaiting_payment`. Payment status is separate: accepting a paid order means moving it to `processing`; marking it `delivered` completes fulfilment.
 
+To restore admin MFA, set `ADMIN_MFA_ENABLED` to `true` in `app/admin/lib/auth-config.ts`, enable the matching backend flow, and rebuild/redeploy. With the flag off, cached OTP challenges are cleared and `/admin/login/verify` redirects to sign-in. Password authentication, `/admin/auth/me` verification, and staff permissions remain required.
+
 ## Integration limits
 
 - **Checkout and payments are unavailable.** The current API does not provide the customer checkout/payment flow. Adding items to the bag does not create an order.
 - **Customer order history needs backend support.** `/orders` has sign-in protection and an availability message. The API currently exposes staff order endpoints only.
-- **Optional-email registration needs backend support.** The frontend accepts registration without email, but the documented backend schema still requires it. Phone sign-in and verification also depend on backend support.
+- The new backend schema allows registration without email. Live phone-only registration, sign-in, and OTP delivery still need end-to-end verification.
 - Bag and wishlist contents are not synchronised across devices.
 - Expired customer sessions require signing in again; automatic token refresh is not implemented.
 - Image uploads depend on the backend storage service being configured and available.

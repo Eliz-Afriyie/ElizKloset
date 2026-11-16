@@ -1,6 +1,6 @@
 export type ProductColor = { name: string; hex: string; image?: string };
 export type Product = {
-  id: string; apiId: string; slug: string; name: string; description: string; price: number; category: string;
+  id: string; apiId: string; slug: string; name: string; description: string; price: number; originalPrice?: number; discount?: number; category: string;
   bestSeller: boolean; isNew: boolean; image: string; color: string; hex: string; colors: ProductColor[];
   availableSizes: (string | number)[]; inStock: boolean; addedOrder: number;
   variants: { id: string; size: string; color: string; availableStock: number }[];

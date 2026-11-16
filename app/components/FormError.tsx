@@ -1,5 +1,6 @@
 "use client";
 
+import ErrorToast from "./ErrorToast";
 import { Children, useEffect, useRef, type ReactNode } from "react";
 
 export default function FormError({ children, className = "", field }: { children: ReactNode; className?: string; field?: string }) {
@@ -16,5 +17,5 @@ export default function FormError({ children, className = "", field }: { childre
     target.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
     return () => { if (target !== element) target.removeAttribute("aria-invalid"); };
   }, [message, field]);
-  return <div ref={summary} className={`form-error-summary ${className}`} role="alert" tabIndex={-1}>{children}</div>;
+  return <><ErrorToast message={message} /><div ref={summary} className={`form-error-summary ${className}`} role="alert" tabIndex={-1}>{children}</div></>;
 }

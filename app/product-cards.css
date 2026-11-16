@@ -22,3 +22,7 @@
   .product-body .size-options { gap: 4px; }
   .product-body .size-options button { min-width: 22px; }
 }
+
+.product-badge.clearance, .clearance-label { background: #750d27; color: #fff9f3; padding: 6px 10px; border-radius: 4px; font-size: 12px; }
+.clearance-label { display: inline-block; margin-bottom: 16px; }
+.price del, .detail-price del { color: #8b7a7c; font-size: .8em; font-weight: normal; margin-right: 8px; }

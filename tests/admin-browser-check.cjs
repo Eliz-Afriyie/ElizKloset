@@ -9,6 +9,11 @@ const { spawn } = require("node:child_process");
 
 const base = process.env.ADMIN_CHECK_URL || "http://localhost:3100";
 const checkLogin = process.argv.includes("--login");
+const { ADMIN_MFA_ENABLED } = require("./load-module.cjs")("app/admin/lib/auth-config.ts");
+const checkProductValidation = process.argv.includes("--product-validation");
+const checkProductCompletion = process.argv.includes("--product-completion");
+const checkProducts = process.argv.includes("--products") || checkProductValidation || checkProductCompletion;
+const checkTaxonomy = process.argv.includes("--taxonomy");
 const browserPath = process.env.ADMIN_CHECK_BROWSER || "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
 const permissions = ["dashboard:read", "catalog:read", "catalog:write", "orders:read", "orders:write", "customers:read", "customers:write", "customers:delete", "content:read", "content:write", "reviews:moderate", "settings:write", "staff:manage"];
 const money = (amount) => ({ amount, currency: "GHS" });
@@ -22,7 +27,9 @@ async function main() {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), "elizkloset-admin-visual-"));
   const browser = spawn(browserPath, ["--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "about:blank"], { windowsHide: true, stdio: "ignore" });
   let socket; let nextId = 0; const pending = new Map(); const apiCalls = []; const errors = []; let empty = false;
-  let signedIn = !checkLogin; let loginAttempts = 0;
+  let taxonomyCreate = null; let productCreate = null; let taxonomyAttempts = 0; let taxonomyUpdate = null; let taxonomyUpdates = 0;
+  let productCreates = 0; let productFinishes = 0; let createdProduct = null;
+  let signedIn = !checkLogin; let loginAttempts = 0; let allowStaffSession = true;
   function send(method, params = {}) { return new Promise((resolve, reject) => { const id = ++nextId; pending.set(id, { resolve, reject }); socket.send(JSON.stringify({ id, method, params })); }); }
   try {
     let pages;
@@ -37,19 +44,51 @@ async function main() {
       if (message.method === "Fetch.requestPaused") {
         const { requestId, request } = message.params; const url = new URL(request.url); apiCalls.push(url.pathname + url.search);
         let body; let responseCode = 200;
-        if (url.pathname.endsWith("auth/me")) { body = signedIn ? { data: staff } : { error: { message: "Staff authentication required." } }; responseCode = signedIn ? 200 : 401; }
+        if (url.pathname.endsWith("auth/me")) { body = signedIn && allowStaffSession ? { data: staff } : { error: { message: "Staff authentication required." } }; responseCode = signedIn && allowStaffSession ? 200 : 401; }
         else if (checkLogin && url.pathname.endsWith("auth/sign-in")) {
           const fields = JSON.parse(request.postData);
           assert.equal(fields.email, "test@example.com"); assert.equal(fields.password, "test-password");
           loginAttempts++;
           body = loginAttempts === 1 ? { error: { message: "Invalid email or password." } } : { data: { status: "mfa_required", challengeId: "test-challenge-1234567890" } };
           responseCode = loginAttempts === 1 ? 401 : 200;
+          if (!ADMIN_MFA_ENABLED && loginAttempts > 1) { signedIn = true; body = { data: { status: "authenticated" } }; }
         }
         else if (checkLogin && url.pathname.endsWith("auth/mfa")) {
           const fields = JSON.parse(request.postData); assert.equal(fields.challengeId, "test-challenge-1234567890");
           if (fields.code === "000000") { responseCode = 401; body = { error: { message: "Incorrect verification code." } }; }
           else { assert.equal(fields.code, "123456"); signedIn = true; body = { data: { status: "authenticated" } }; }
         }
+        else if (checkTaxonomy && url.pathname.endsWith('/categories') && request.method==='POST') {
+          taxonomyCreate = request; taxonomyAttempts++;
+          if (taxonomyAttempts === 1) { responseCode=422; body={error:{message:'Please check the highlighted fields.',fields:{status:['Field required']},requestId:'category-validation-1'}}; }
+          else body={data:{id:'created-category',name:'Uploaded category',version:1}};
+        }
+        else if (checkTaxonomy && url.pathname.endsWith('/categories/api-category')) {
+          if (request.method === 'PATCH') {
+            taxonomyUpdate = request; taxonomyUpdates++;
+            if (taxonomyUpdates === 1 || taxonomyUpdates === 3) {
+              if (taxonomyUpdates === 3) allowStaffSession = false;
+              responseCode = 401; body = { error: { message: 'Update rejected by service.', requestId: 'update-check-1' } };
+            } else body = { data: { id: 'api-category', version: 2 } };
+          } else body = { data: { id: 'api-category', name: 'API category', slug: 'api-category', description: 'Category', status: 'active', assignedProductCount: 0, version: 1, image: { url: '/images/hero-burgundy.png' } } };
+        }
+        else if (checkProductCompletion && url.pathname.endsWith('/products') && request.method === 'POST') {
+          productCreate = request; productCreates++;
+          const parts = (name) => [...request.postData.matchAll(new RegExp('name="'+name+'"\r\n\r\n([^\r]+)', 'g'))].map(match=>JSON.parse(match[1]));
+          createdProduct = { id:'created-product',name:'New product',description:'',createdAt:'2026-10-28T00:00:00Z',version:1,status:'draft',price:money(16000),category:{id:'api-category'},collections:[],images:[],colors:parts('colors'),variants:parts('variants').map((v,i)=>({...v,id:'created-variant-'+i,availableStock:v.stock})),stock:7,availableStock:7 };
+          body = { data: createdProduct }; responseCode = 201;
+        }
+        else if (checkProductCompletion && url.pathname.endsWith('/products/created-product') && request.method === 'PATCH') {
+          productFinishes++;
+          if (productFinishes === 1) { responseCode = 503; body = {error:{message:'Temporary completion failure.',requestId:'finish-1'}}; }
+          else { const update=JSON.parse(request.postData); body={data:{...createdProduct,status:update.status,collections:update.collectionIds,colors:update.colors??createdProduct.colors,version:2}}; }
+        }
+        else if (checkProductValidation && url.pathname.endsWith('/products') && request.method === 'POST') {
+          productCreate = request; responseCode = 422;
+          body = { error: { code: 'VALIDATION_ERROR', message: 'Please check the highlighted fields.', fields: { status: ['Field required'] }, requestId: 'fixture-validation-1' } };
+        }
+        else if (checkProducts && url.pathname.endsWith('/products')) body = { data: [{ id:'api-product', name:'API product', description:'A real-shaped product fixture', createdAt:'2026-10-27T00:00:00Z', version:1, price:money(12500), status:'active', category:{id:'api-category'}, collections:[], images:[], colors:[{id:'black',name:'Black',hex:'#000000',imageIds:[]}], variants:[{id:'variant-1',colorId:'black',size:'M',stock:12,availableStock:12}], stock:12,availableStock:12 }], pagination:{page:1,pageSize:8,total:1,totalPages:1} };
+        else if ((checkProducts || checkTaxonomy) && /\/(categories|collections)$/.test(url.pathname)) body = {data:url.pathname.endsWith('/categories')?[{id:'api-category',name:'API category',slug:'api-category',status:'active',version:1,description:'Category',assignedProductCount:0}]:checkProductCompletion?[{id:'api-collection',name:'API collection',slug:'api-collection',status:'active',version:1,description:'Collection'}]:[],pagination:{page:1,pageSize:100,total:1,totalPages:1}};
         else if (url.pathname.endsWith("dashboard")) body = { data: empty ? { ...dashboard, stats: { paidRevenue: money(0), paidOrders: 0, orders: 0, catalogStyles: 0, stockAttention: 0 }, sales: [], topProducts: [], recentOrders: [], orderStatuses: [] } : dashboard };
         else { errors.push("Unexpected API request: " + url.pathname); body = { error: { message: "Unexpected test request" } }; responseCode = 500; }
         try {
@@ -67,6 +106,32 @@ async function main() {
     async function viewport(width, height, mobile = false) { await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile }); }
     fs.mkdirSync(".admin-checks", { recursive: true });
     async function screenshot(name) { const image = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false }); fs.writeFileSync(path.join(".admin-checks", name + ".png"), Buffer.from(image.data, "base64")); }
+    if (checkLogin && !ADMIN_MFA_ENABLED) {
+      await send('Page.addScriptToEvaluateOnNewDocument', { source: "sessionStorage.setItem('elizkloset-admin-pending-otp', JSON.stringify({challengeId:'stale-challenge-1234567890',email:'test@example.com',expiresAt:new Date(Date.now()+300000).toISOString()}))" });
+      await viewport(1440,1000); await send('Page.navigate',{url:base+'/admin/login'});
+      await until("!!document.querySelector('.admin-sign-in-form fieldset:not([disabled])')");
+      assert.equal(await evaluate("document.querySelector('.admin-auth-steps')"),null);
+      assert.equal(await evaluate("sessionStorage.getItem('elizkloset-admin-pending-otp')"),null);
+      const fill = "document.querySelector('input[name=email]').value='test@example.com';document.querySelector('input[name=password]').value='test-password';document.querySelector('.admin-sign-in-form').requestSubmit()";
+      await evaluate(fill); await until("!!document.querySelector('.admin-notice[role=alert]')");
+      assert.equal(await evaluate('location.pathname'),'/admin/login');
+      await evaluate(fill); await until("!!document.querySelector('.admin-sales-report')");
+      assert.equal(await evaluate('location.pathname'),'/admin');
+      assert.ok(apiCalls.some(url=>url.endsWith('/auth/me')));
+      assert.equal(apiCalls.some(url=>url.endsWith('/auth/mfa')),false);
+      await send('Page.reload'); await until("!!document.querySelector('.admin-sales-report')");
+      assert.equal(await evaluate("sessionStorage.getItem('elizkloset-admin-pending-otp')"),null);
+      signedIn=false; allowStaffSession=false;
+      await viewport(390,844,true); await send('Page.navigate',{url:base+'/admin/login/verify'});
+      await until("location.pathname === '/admin/login' && !!document.querySelector('.admin-sign-in-form fieldset:not([disabled])')");
+      await evaluate(fill); await until("!!document.querySelector('.admin-notice[role=alert]')");
+      assert.equal(await evaluate('location.pathname'),'/admin/login');
+      assert.equal(await evaluate("document.querySelector('.admin-sales-report')"),null);
+      assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
+      await screenshot('login-mfa-disabled-mobile');
+      assert.equal(errors.length,0,errors.join('; '));
+      console.log('Admin sign-in checks passed: MFA disabled, stale OTP cleanup, invalid credentials, verified staff session, session rejection, refresh and mobile redirect. No live writes performed.'); return;
+    }
     if (checkLogin) {
       await viewport(1440, 1000); await send("Page.navigate", { url: base + "/admin/login" });
       await until("!!document.querySelector('.admin-sign-in-form fieldset:not([disabled])')");
@@ -122,6 +187,111 @@ async function main() {
       assert.equal(errors.length, 0, errors.join("; "));
       console.log("Login browser checks passed: dedicated OTP route, refresh recovery, incorrect-code retry, formatted paste, staff verification, restart/cleanup and mobile layout.");
       return;
+    }
+    if(checkTaxonomy) {
+      await viewport(1360,980);await send('Page.navigate',{url:base+'/admin/collections'});
+      await until("document.querySelector('.admin-table tbody')?.textContent.includes('API category')");
+      await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Add category')).click()");
+      await until("!!document.querySelector('dialog[open] input[type=file]')");
+      await evaluate("(() => { const f=document.querySelector('dialog[open] form');f.querySelector('[name=name]').value='Uploaded category';f.querySelector('[name=description]').value='Category with image'; const transfer=new DataTransfer();transfer.items.add(new File([Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jY1sAAAAASUVORK5CYII='),c=>c.charCodeAt(0))],'category.png',{type:'image/png'}));const input=f.querySelector('input[type=file]');input.files=transfer.files;input.dispatchEvent(new Event('change',{bubbles:true})); })()");
+      await until("document.querySelector('dialog[open]')?.textContent.includes('Image selected')");
+      assert.equal(apiCalls.some(url=>url.endsWith('/assets')),false);
+      assert.equal(await evaluate("document.querySelector('dialog[open] input[name=slug]')"),null);
+      await evaluate("document.querySelector('dialog[open] form').requestSubmit()");
+      await until("document.querySelector('dialog[open] [name=status]')?.getAttribute('aria-invalid') === 'true'");
+      await until("document.activeElement?.name === 'status'");
+      assert.match(await evaluate("document.querySelector('dialog[open] .admin-form-error').textContent"), /Status: Field required/);
+      assert.equal(await evaluate("document.querySelector('dialog[open] [name=name]').value"),'Uploaded category');
+      assert.equal(await evaluate("document.querySelector('dialog[open] input[type=file]').files.length"),1);
+      assert.match(taxonomyCreate.postData,/name="status"\r\n\r\ndraft/);
+      await evaluate("document.querySelector('dialog[open] form').requestSubmit()");
+      await until("!document.querySelector('dialog[open]') && document.body.textContent.includes('Saved to the store.')");
+      assert.ok(taxonomyCreate);
+      assert.match(Object.entries(taxonomyCreate.headers).find(([key])=>key.toLowerCase()==='content-type')[1],/multipart\/form-data; boundary=/);
+      assert.match(taxonomyCreate.postData,/name="file"; filename="category.png"/);
+      assert.doesNotMatch(taxonomyCreate.postData,/name="taxonomy_status"/);
+      assert.match(taxonomyCreate.postData,/name="status"/);
+      async function editCategory() {
+        await until("!!document.querySelector('[aria-label=\"Actions for API category\"]')");
+        await evaluate("document.querySelector('[aria-label=\"Actions for API category\"]').click()");
+        await until("!!document.querySelector('.admin-actions-menu:popover-open')");
+        await evaluate("Array.from(document.querySelectorAll('.admin-actions-menu:popover-open button')).find(b=>b.textContent==='Edit').click()");
+        await until("document.querySelector('dialog[open] [name=name]')?.value==='API category'");
+      }
+      await editCategory();
+      assert.equal(await evaluate("document.querySelector('dialog[open] [name=slug]')"), null);
+      await evaluate("document.querySelector('dialog[open] [name=name]').value='Updated category';document.querySelector('dialog[open] form').requestSubmit()");
+      await until("document.querySelector('dialog[open] .admin-form-error')?.textContent.includes('Update rejected')");
+      for (let attempt=0;attempt<40&&apiCalls.filter(url=>url.endsWith('/auth/me')).length<2;attempt++) await wait(100);
+      assert.ok(apiCalls.filter(url=>url.endsWith('/auth/me')).length>=2);
+      assert.equal(await evaluate("document.querySelector('dialog[open] [name=name]').value"), 'Updated category');
+      assert.equal(taxonomyUpdates,1, 'Failed writes must not be retried automatically');
+      assert.match(Object.entries(taxonomyUpdate.headers).find(([key])=>key.toLowerCase()==='content-type')[1], /multipart\/form-data; boundary=/);
+      assert.equal(Object.entries(taxonomyUpdate.headers).find(([key])=>key.toLowerCase()==='if-match')[1], '"1"');
+      assert.match(taxonomyUpdate.postData,/name="name"\r\n\r\nUpdated category/);
+      assert.doesNotMatch(taxonomyUpdate.postData,/name="file"/);
+      await evaluate("document.querySelector('dialog[open] form').requestSubmit()");
+      await until("!document.querySelector('dialog[open]')");
+      assert.equal(taxonomyUpdates,2);
+      await editCategory();
+      await evaluate("document.querySelector('dialog[open] form').requestSubmit()");
+      await until("document.body.textContent.includes('Your staff session has expired') && !document.querySelector('.admin-shell')");
+      assert.equal(taxonomyUpdates,3);
+      assert.equal(errors.length,0,errors.join('; '));
+      console.log('Category checks passed: multipart create/update, validation retry, preserved images/draft, operation 401 keeps valid session, confirmed expiry signs out. No live writes performed.');return;
+    }
+    if (checkProducts) {
+      await viewport(1360,980); await send('Page.navigate',{url:base+'/admin/products'});
+      await until("document.querySelector('.admin-table tbody')?.textContent.includes('API product')");
+      assert.equal(await evaluate("document.querySelector('.admin-inventory-summary button strong').textContent"),'1');
+      assert.equal(await evaluate("document.querySelectorAll('[aria-label=\"Stock total unavailable\"]').length"),2);
+      assert.equal(await evaluate("document.querySelectorAll('.admin-form-error').length"),0);
+      assert.match(await evaluate("document.querySelector('.admin-table tbody').textContent"),/12 units/);
+      if (checkProductValidation || checkProductCompletion) {
+        await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Add product')).click()");
+        await until("!!document.querySelector('.admin-product-wizard[open]')");
+        if (checkProductCompletion) await evaluate("document.querySelector('.admin-wizard-form [name=collections]').checked=true");
+        await evaluate("document.querySelector('.admin-wizard-form [name=name]').value='New product';document.querySelector('.admin-wizard-form [name=price]').value='160';document.querySelector('.admin-wizard-form').requestSubmit()");
+        await until("!document.querySelector('[data-step=\"2\"]').hidden");
+        async function fill(selector, value) {
+          await evaluate(`(() => {const input=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+        }
+        await fill('[aria-label="Variant 1 colour name"]', 'Black');
+        await fill('[aria-label="Variant 1 size 1"]', 'M');
+        await fill('[aria-label="Variant 1 quantity 1"]', '7');
+        await evaluate("document.querySelector('.admin-wizard-form').requestSubmit()");
+        await until("!document.querySelector('[data-step=\"3\"]').hidden");
+        await evaluate("document.querySelector('.admin-wizard-form [name=status]').value='active';document.querySelector('.admin-wizard-form').requestSubmit()");
+        if (checkProductCompletion) {
+          await until("document.querySelector('.admin-wizard-error')?.textContent.includes('saved as a draft')");
+          assert.equal(productCreates,1);assert.equal(productFinishes,1);
+          assert.equal(await evaluate("document.querySelector('.admin-wizard-form [name=name]').value"),'New product');
+          assert.equal(await evaluate("document.querySelector('.admin-wizard-form [name=collections]').checked"),true);
+          assert.doesNotMatch(productCreate.postData,/name="(?:collection_ids|image_ids|product_status|file|alt)"/);
+          await evaluate("document.querySelector('.admin-wizard-form').requestSubmit()");
+          await until("!document.querySelector('.admin-product-wizard[open]') && document.body.textContent.includes('Product saved to the store.')");
+          assert.equal(productCreates,1);assert.equal(productFinishes,2);
+          assert.equal(errors.length,0,errors.join('; '));
+          console.log('Product completion check passed: accepted create fields, collection assignment, draft preserved on failure, retry updates the same product. No live writes performed.');return;
+        }
+        await until("document.querySelector('.admin-wizard-form [name=status]')?.getAttribute('aria-invalid') === 'true'");
+        await until("document.activeElement?.name === 'status'");
+        assert.match(await evaluate("document.querySelector('.admin-wizard-error').textContent"), /Publication status: Field required/);
+        assert.equal(await evaluate("document.querySelector('.admin-wizard-form [name=name]').value"), 'New product');
+        assert.ok(productCreate);
+        assert.match(productCreate.postData, /name="status"\r\n\r\nactive/);
+        assert.doesNotMatch(productCreate.postData, /name="product_status"/);
+        await screenshot('product-field-validation');
+        assert.equal(errors.length, 0, errors.join('; '));
+        console.log('Product validation browser check passed: status aliases submitted, field message visible, status highlighted and focused, draft preserved. No live writes performed.'); return;
+      }
+      await screenshot('admin-products-no-summary');
+      await evaluate("document.querySelector('[aria-label=\"Filter stock\"]').value='low'; document.querySelector('[aria-label=\"Filter stock\"]').dispatchEvent(new Event('change',{bubbles:true}))");
+      await until("document.querySelector('.admin-inventory-summary button strong')?.textContent === '\u2014'");
+      for(let attempt=0;attempt<40&&!apiCalls.some(url=>url.includes('stock=low'));attempt++) await wait(100);
+      assert.ok(apiCalls.some(url=>url.includes('stock=low')));
+      assert.equal(errors.length,0,errors.join('; '));
+      console.log('Admin product browser checks passed: missing summary, real product rows, stock availability and server filters. No live writes performed.'); return;
     }
     await viewport(1360, 980); await send("Page.navigate", { url: base + "/admin" }); await until("!!document.querySelector('.admin-sales-report')"); await wait(450);
     assert.equal(await evaluate("document.documentElement.scrollWidth <= innerWidth"), true); await screenshot("desktop");

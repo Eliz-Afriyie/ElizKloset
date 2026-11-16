@@ -7,7 +7,7 @@ Implemented 26 October 2026 against the deployed OpenAPI document in `backend-op
 - Home and shop use real products, categories and collections. Empty responses stay empty; sample products and reviews have been removed from runtime.
 - Shop search, category/collection selection, string sizes, colours, GHS price limits, availability and sorting use server filters. Load more uses the returned cursor and retains previously loaded products.
 - Product cards open a details dialog. Direct `/products/{slug}` links load the backend product, including products created after the frontend build. Missing products show unavailable; API failures show an error.
-- Prices convert integer pesewas to GHS. Size/colour availability comes from actual variants; unavailable combinations cannot be added to the bag. Badges are shown only when supplied by the backend.
+- Product prices and discounts are GHS and are displayed without unit conversion. Product covers prefer image_url, falling back to images[0].url. Size/colour availability comes from actual variants; unavailable combinations cannot be added to the bag. Badges are shown only when supplied by the backend.
 - Featured and product reviews use the published review endpoints. There is no review-submission endpoint, so no fake submission form is shown.
 - Customer sign-in uses `/auth/token` with form-encoded `username` and `password`. Session restoration uses `/auth/me` with the access token in the documented JSON body. Sign-out uses `/auth/logout`.
 - Registration uses `/api/v1/users/`, email verification uses `/users/verify-otp`, and resend/reset requests use the documented target/code fields. Passwords and codes are never saved to browser storage.
@@ -18,9 +18,9 @@ Implemented 26 October 2026 against the deployed OpenAPI document in `backend-op
 
 Registration requirement update: the owner explicitly requested optional email. First name, last name, phone, password and confirmation are required in the UI and display asterisks; whitespace-only names/phone are rejected. When email is absent, the frontend omits it entirely from the registration JSON and uses the phone number as the OTP target through `/users/verify-phone-otp`. Email verification continues through `/users/verify-otp` when email is supplied. Sign-in/reset target inputs accept email or phone.
 
-**Backend change required before email-less accounts can be created:** the current deployed `UserCreate` schema still requires email. Make email optional, require and validate the other registration fields, support phone-based registration/OTP delivery/resend and sign-in, and allow account/profile responses to carry absent email. Never generate a fake email address. Existing account profile updates still follow the deployed schema, which currently requires an email. Fixture tests validate the intended email-less frontend flow; they do not establish deployed backend support.
+**Backend schema update, 27 October 2026:** the v2 backend allows omitted/null email in `UserCreate` and `UserUpdate`. The frontend continues to require first name, last name, phone, password and confirmation for registration. Live phone-only registration, sign-in and OTP delivery still need end-to-end verification; schema support alone does not establish those flows work. The profile form currently still requires email.
 
-The owner explicitly chose to retain the current branded hero, About content and campaign imagery. `/pages/*` currently returns sample copy and placeholder images, so these content documents are not rendered. Site feature settings are live; page-content publishing needs a later switch once approved backend content is ready.
+As of 4 November 2026, page banners read `hero_section.slides` from `/pages/home`, `/pages/shop`, `/pages/about` and `/pages/contact`. The homepage also renders `style_worth_talking_about`. Footer branding, navigation, benefits, newsletter copy and social links use `/site.footer`. Contact details, form fields and availability use `contact_section`; About founder sections remain frontend copy because the current About API supplies only its hero. `/collections` shares the shop page to support backend navigation links. Carousel active flags, autoplay interval, arrows and indicators follow backend settings.
 
 The deployed API has no customer cart, wishlist, checkout, payment or order-history operations. Bag selections are stored on this device under `elizkloset-shopping-v2`, containing identifiers, size, colour and quantity only; wishlist identifiers use the account-specific keys described below. Prices and availability are read from the API. The new storage key excludes old preview selections. Missing products can be removed from the bag. Checkout remains disabled and no payment or order is fabricated. Delivery address editing is not connected because the user schema has no address fields.
 
@@ -36,7 +36,7 @@ Wishlist identifiers now use a separate device-storage key per backend customer 
 
 ## Transport and session isolation
 
-Browser calls use `/api/store/*`. The server-only `STORE_API_ORIGIN` defaults to `https://elizkloset.onrender.com`; generic authentication lives at `/auth/*`, public resources at `/api/v1/*`.
+Browser calls use `/api/store/*`. The server-only `STORE_API_ORIGIN` defaults to `https://elizkloset-docker.onrender.com`; generic authentication lives at `/auth/*`, public resources at `/api/v1/*`.
 
 The proxy allowlists paths and methods, rejects foreign-origin writes, uses no-store responses, and returns explicit connection/timeout errors. Customer bearer tokens stay in HttpOnly cookies scoped to `/api/store`; backend cookies are namespaced and scoped to that proxy. Staff cookies and tokens are never sent to customer endpoints, and customer tokens are never sent to the public catalog. Refresh tokens are stripped from browser responses; automatic token refresh is not implemented. Expired sessions require signing in again.
 
@@ -63,3 +63,19 @@ node tests/store-browser-check.cjs
 ```
 
 Backend follow-up: publish products with actual variants/photos, fix image storage, enable contact/newsletter only when their services are configured, publish approved page content, document successful customer authentication/profile responses, and supply cart/checkout/payment/order endpoints before enabling ordering.
+
+
+## Storefront recheck: 28 October 2026
+
+Read-only calls to the new backend and through the local storefront proxy returned the same statuses: products, categories, site and featured reviews return HTTP 500 with INTERNAL_ERROR; collections returns HTTP 200. The frontend proxy forwards these backend errors rather than generating them. A guest auth/me response of HTTP 401 is expected. Collections currently includes New Arrival with image: null, so there is no collection photograph to display.
+
+Backend log references from direct public requests:
+
+| Request | Request ID |
+| --- | --- |
+| GET /api/v1/products?limit=50&sort=newest | c62d4179-7899-4fd1-a517-3b7ed9fdda6d |
+| GET /api/v1/categories | 7cb49ce8-330b-4c0d-8400-a4b52d0e3574 |
+| GET /api/v1/site | feb33546-8bd1-4a78-96b3-51cf7f3b8c45 |
+| GET /api/v1/reviews?featured=true&limit=3 | dabfd101-a251-48a4-9b1e-abbddfef4a8b |
+
+These errors require backend log investigation; the response does not reveal their underlying cause. Live product parsing cannot be confirmed until the public products endpoint returns a successful payload.

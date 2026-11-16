@@ -1,4 +1,5 @@
 "use client";
+import ErrorToast from "../../components/ErrorToast";
 import FormError from "../../components/FormError";
 
 import { useState, type FormEvent } from "react";
@@ -48,7 +49,7 @@ function StaffManagement() {
   const [editor, setEditor] = useState<{ staff: StaffRecord | null } | null>(null);
   const [notice, setNotice] = useState("");
   const query = useAdminQuery(`staff?page=${page}&pageSize=8`, parsers.staff);
-  return <section className="admin-card"><div className="admin-card-heading"><h2>Staff & permissions</h2><button className="admin-button" onClick={() => setEditor({ staff: null })}>Invite staff</button></div>{notice && <p className="admin-notice" role="status">{notice}</p>}<ApiStatus variant="table" loading={query.loading} error={query.error} retry={query.refresh} />
+  return <section className="admin-card"><div className="admin-card-heading"><h2>Staff & permissions</h2><button className="admin-button" onClick={() => setEditor({ staff: null })}>Invite staff</button></div><ErrorToast message={notice} tone="success" onDismiss={() => setNotice("")} /><ApiStatus variant="table" loading={query.loading} error={query.error} retry={query.refresh} />
     {query.data && !query.loading && <><div className="admin-table-scroll"><table className="admin-table"><thead><tr><th>Staff member</th><th>Role</th><th>Status</th><th>MFA</th><th>Actions</th></tr></thead><tbody>{query.data.data.map((member) => <tr key={member.id}><td>{member.name || member.email}<small>{member.email}</small></td><td>{member.role}</td><td>{member.status}</td><td>{member.mfaEnabled ? "Enabled" : "Not enabled"}</td><td>{["catalog", "fulfilment"].includes(member.role) ? <button className="admin-text-button" onClick={() => setEditor({ staff: member })}>Edit access</button> : <span>Owner managed</span>}</td></tr>)}</tbody></table>{!query.data.data.length && <p className="admin-empty">No staff records found.</p>}</div><ApiPagination page={page} total={query.data.pagination.total} totalPages={query.data.pagination.totalPages} loading={query.loading} onChange={setPage} /></>}
     {editor && <StaffEditor staff={editor.staff} onClose={() => setEditor(null)} onReload={() => { setEditor(null); query.refresh(); }} onSaved={(message) => { setNotice(message); query.refresh(); }} />}
   </section>;
@@ -60,5 +61,5 @@ export default function AdminSettings() {
   const canStaff = !!staff?.permissions.includes("staff:manage");
   const query = useAdminQuery(canSettings ? "settings" : null, parsers.settings);
   const [notice, setNotice] = useState("");
-  return <>{notice && <p role="status" className="admin-notice">{notice}</p>}{canSettings && <><ApiStatus variant="form" loading={query.loading} error={query.error} retry={query.refresh} />{query.data && !query.loading && <div className="admin-settings-grid"><section className="admin-card"><SettingsForm key={query.data.version} settings={query.data} onSaved={() => { setNotice("Store settings saved."); query.refresh(); }} onReload={query.refresh} /></section><section className="admin-card"><h2>Connections</h2><dl className="admin-definition">{query.data.connections.map((connection) => <div key={connection.service}><dt>{connection.service}</dt><dd>{connection.status}</dd></div>)}</dl></section></div>}</>}{canStaff && <StaffManagement />}</>;
+  return <><ErrorToast message={notice} tone="success" onDismiss={() => setNotice("")} />{canSettings && <><ApiStatus variant="form" loading={query.loading} error={query.error} retry={query.refresh} />{query.data && !query.loading && <div className="admin-settings-grid"><section className="admin-card"><SettingsForm key={query.data.version} settings={query.data} onSaved={() => { setNotice("Store settings saved."); query.refresh(); }} onReload={query.refresh} /></section><section className="admin-card"><h2>Connections</h2><dl className="admin-definition">{query.data.connections.map((connection) => <div key={connection.service}><dt>{connection.service}</dt><dd>{connection.status}</dd></div>)}</dl></section></div>}</>}{canStaff && <StaffManagement />}</>;
 }

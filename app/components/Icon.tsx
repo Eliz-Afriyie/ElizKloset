@@ -1,6 +1,7 @@
-﻿type IconName = "search" | "heart" | "bag" | "truck" | "lock" | "diamond" | "headset" | "arrow" | "close" | "menu" | "user" | "card" | "chevron-down" | "chevron-left" | "chevron-right" | "plus" | "reset" | "more" | "calendar" | "arrow-left" | "warning";
+type IconName = "image" | "search" | "heart" | "bag" | "truck" | "lock" | "diamond" | "headset" | "arrow" | "close" | "menu" | "user" | "card" | "chevron-down" | "chevron-left" | "chevron-right" | "plus" | "reset" | "more" | "calendar" | "arrow-left" | "warning";
 export default function Icon({ name, ...props }: { name: IconName } & React.SVGProps<SVGSVGElement>) {
   const paths: Record<IconName, React.ReactNode> = {
+    image: <><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8" cy="8" r="1.5" /><path d="m3 17 5-5 4 4 4-6 5 7" /></>,
     warning: <><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z" /><path d="M12 9v4M12 17h.01" /></>,
     "chevron-down": <path d="m6 9 6 6 6-6" />,
     "chevron-left": <path d="m15 6-6 6 6 6" />,

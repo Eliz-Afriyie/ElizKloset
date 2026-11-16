@@ -1,9 +1,9 @@
 .ek-admin { --admin-control-radius: 10px; }
 .admin-inventory-alert { display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px; margin: 0 0 22px; border: 1px solid #edb0b7; border-left: 5px solid #c7354a; border-radius: 10px; background: #fff0f1; color: #962538; }
 .admin-inventory-alert > svg { width: 24px; height: 24px; flex-shrink: 0; margin-top: 2px; color: #c7354a; }
-.admin-inventory-alert strong { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-.admin-inventory-alert p { font-size: 12px; line-height: 1.7; }
-.admin-inventory-alert small { display: block; margin-top: 7px; color: #aa5561; font-size: 10px; line-height: 1.6; }
+.admin-inventory-alert strong { display: block; font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.admin-inventory-alert p { font-size: 14px; line-height: 1.7; }
+.admin-inventory-alert small { display: block; margin-top: 7px; color: #aa5561; font-size: 12px; line-height: 1.6; }
 .admin-inventory-alert.warning { background: #fff5e4; border-color: #edcf94; border-left-color: #c17b12; color: #8b540c; }
 .admin-inventory-alert.warning > svg { color: #c17b12; }
 .admin-inventory-alert.warning small { color: #a47a3d; }

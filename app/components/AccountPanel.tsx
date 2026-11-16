@@ -1,5 +1,6 @@
 "use client";
 import FormError from "./FormError";
+import VerificationCode from "./VerificationCode";
 import Skeleton from "./Skeleton";
 import { useEffect, useState, type FormEvent } from "react";
 import { storeRequest } from "../lib/store-api";
@@ -37,15 +38,15 @@ export default function AccountPanel({ onSignedIn, onSaved }: { onSignedIn?: () 
         }
         if (fields.get("password") !== fields.get("confirmPassword")) { setErrorField("confirmPassword"); throw new Error("Your passwords do not match."); }
         await storeRequest("auth/register", { method: "POST", body: { ...(email ? { email } : {}), first_name: String(fields.get("first_name")).trim(), last_name: String(fields.get("last_name")).trim(), phone: String(fields.get("phone")).trim(), password: String(fields.get("password")) } });
-        form.reset(); setTarget(email || String(fields.get("phone")).trim()); setMode("verify"); setMessage("Account registration accepted. Enter the verification code sent to your email or phone.");
+        form.reset(); setTarget(email || String(fields.get("phone")).trim()); setMode("verify"); setMessage("Enter the code sent to your email or phone to finish creating your account.");
       } else if (mode === "verify") {
-        await storeRequest(email.includes("@") ? "auth/verify-otp" : "auth/verify-phone-otp", { method: "POST", body: { target: email, code: String(fields.get("code")) } });
+        await storeRequest(email.includes("@") ? "auth/verify-otp" : "auth/verify-phone-otp", { method: "POST", body: { target: email, code: fields.getAll("code").join("") } });
         setMode("signin"); setMessage("Account verified. You can now sign in.");
       } else if (mode === "forgot") {
         await storeRequest("auth/forgot-password", { method: "POST", body: { target: email } });
         setTarget(email); setMode("reset"); setMessage("If this account is eligible, follow the reset instructions sent to your email.");
       } else {
-        await storeRequest("auth/reset-password", { method: "POST", body: { target: email, code: String(fields.get("code")), new_password: String(fields.get("password")) } });
+        await storeRequest("auth/reset-password", { method: "POST", body: { target: email, code: fields.getAll("code").join(""), new_password: String(fields.get("password")) } });
         setMode("signin"); setMessage("Password reset. Sign in with your new password.");
       }
     } catch (error) { setError(error instanceof Error ? error.message : "Unable to complete this request."); }
@@ -70,14 +71,14 @@ export default function AccountPanel({ onSignedIn, onSaved }: { onSignedIn?: () 
     <form key={mode} className="account-form" onSubmit={submit}>{feedback}<fieldset disabled={busy} style={{ border: 0, padding: 0 }}>
       {mode === "signup" && <><label><span>First name <span className="required-mark" aria-hidden="true">*</span></span><input name="first_name" required autoComplete="given-name" maxLength={100} /></label><label><span>Last name <span className="required-mark" aria-hidden="true">*</span></span><input name="last_name" required autoComplete="family-name" maxLength={100} /></label><label><span>Phone number <span className="required-mark" aria-hidden="true">*</span></span><input name="phone" type="tel" required autoComplete="tel" maxLength={25} /></label></>}
       <label><span>{mode === "signup" ? "Email address (optional)" : "Email or phone number"}{mode !== "signup" && <span className="required-mark" aria-hidden="true"> *</span>}</span><input name="email" type={mode === "signup" ? "email" : "text"} required={mode !== "signup"} defaultValue={mode === "signup" ? "" : target} onChange={(event) => { if (mode === "verify") setTarget(event.target.value); }} autoComplete={mode === "signup" ? "email" : "username"} maxLength={254} /></label>
-      {(mode === "verify" || mode === "reset") && <label><span>Six-digit code <span className="required-mark" aria-hidden="true">*</span></span><input name="code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} minLength={6} autoComplete="one-time-code" required /></label>}
+      {(mode === "verify" || mode === "reset") && <VerificationCode key={mode} />}
       {(mode === "signin" || mode === "signup" || mode === "reset") && <label><span>{mode === "reset" ? "New password" : "Password"}<span className="required-mark" aria-hidden="true"> *</span></span><input name="password" type="password" required minLength={mode === "signin" ? 1 : 8} maxLength={128} autoComplete={mode === "signin" ? "current-password" : "new-password"} /></label>}
       {mode === "signup" && <label><span>Confirm password <span className="required-mark" aria-hidden="true">*</span></span><input name="confirmPassword" type="password" required minLength={8} maxLength={128} autoComplete="new-password" /></label>}
       <button className="button primary" type="submit">{busy ? "Please wait..." : mode === "signup" ? "Create account" : mode === "verify" ? "Verify account" : mode === "forgot" ? "Request reset code" : mode === "reset" ? "Reset password" : "Sign in"}</button>
     </fieldset></form>
     {mode === "signin" && <div className="account-help-actions"><button className="text-button" disabled={busy} onClick={() => { setMode("verify"); setTarget(""); setError(""); }}>Verify an existing account</button><button className="text-button" disabled={busy} onClick={() => { setMode("forgot"); setError(""); }}>Forgot password?</button></div>}
-    {mode === "verify" && <button className="text-button" disabled={busy || !target} onClick={() => void resend()}>Request a new code</button>}
-    {(mode === "verify" || mode === "reset" || mode === "forgot") && <button className="text-button" disabled={busy} onClick={() => { setMode("signin"); setError(""); }}>Back to sign in</button>}
+    <div className="account-verification-actions">{mode === "verify" && <button className="text-button" disabled={busy || !target} onClick={() => void resend()}>Request a new code</button>}
+    {(mode === "verify" || mode === "reset" || mode === "forgot") && <button className="text-button" disabled={busy} onClick={() => { setMode("signin"); setError(""); }}>Back to sign in</button>}</div>
   </>}{message && <p className="account-message" role="status">{message}</p>}</div>;
 }
 

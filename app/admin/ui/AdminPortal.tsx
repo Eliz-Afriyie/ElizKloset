@@ -12,6 +12,7 @@ import LiveAdminOverview from "./LiveAdminOverview";
 import AdminOrders from "./AdminOrders";
 import LiveAdminCustomers from "./LiveAdminCustomers";
 import AdminContent from "./AdminContent";
+import ImageGallery from "./ImageGallery";
 import AdminSettings from "./AdminSettings";
 import { AdminDialog } from "./ApiControls";
 import { useSidebarCollapsed, useMobileSidebar } from "../lib/sidebar";
@@ -20,6 +21,7 @@ const navigation = [
   { id: "dashboard", label: "Overview", icon: "diamond", permissions: ["dashboard:read"] },
   { id: "products", label: "Products", icon: "bag", permissions: ["catalog:read"] },
   { id: "collections", label: "Collections & categories", icon: "diamond", permissions: ["catalog:read"] },
+  { id: "gallery", label: "Gallery", icon: "image", permissions: ["catalog:read", "catalog:write", "content:read", "content:write"] },
   { id: "orders", label: "Orders", icon: "truck", permissions: ["orders:read"] },
   { id: "customers", label: "Customers", icon: "user", permissions: ["customers:read"] },
   { id: "content", label: "Store content", icon: "heart", permissions: ["content:read", "reviews:moderate"] },
@@ -86,7 +88,7 @@ export default function AdminPortal({ section, startNewProduct = false, productD
         {!current ? <section className="admin-card"><h2>Access restricted</h2><p>Your staff account does not have permission to view this section.</p>{visible[0] && <Link className="admin-button" href={visible[0].id === "dashboard" ? "/admin" : "/admin/" + visible[0].id}>Open your workspace</Link>}</section> : <>
           {section === "dashboard" && <LiveAdminOverview />}
           {section === "products" && <AdminProducts startNew={startNewProduct} detailsId={productDetailsId} />}
-          {section === "collections" && <LiveTaxonomy />}
+          {section === "collections" && <LiveTaxonomy />}{section === "gallery" && <section className="admin-card"><ImageGallery /></section>}
           {section === "orders" && <AdminOrders />}
           {section === "customers" && <LiveAdminCustomers />}
           {section === "content" && <AdminContent />}

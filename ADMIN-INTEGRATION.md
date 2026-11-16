@@ -2,14 +2,16 @@
 
 Started 26 October 2026 against the deployed backend OpenAPI document, saved in [backend-openapi.json](backend-openapi.json).
 
-Swagger: https://elizkloset.onrender.com/elizkloset/api/v1/docs
+Swagger: https://elizkloset-docker.onrender.com/elizkloset/api/v1/docs
 
-Actual API base: `https://elizkloset.onrender.com/api/v1`. The docs URL prefix is not the API prefix. The root `/openapi.json` defines the actual routes.
+Actual API base: `https://elizkloset-docker.onrender.com/api/v1`. The docs URL prefix is not the API prefix. The root `/openapi.json` defines the actual routes.
 
 ## Connected admin features
 
+Development update (28 October 2026): `ADMIN_MFA_ENABLED` in `app/admin/lib/auth-config.ts` is temporarily `false`, coordinated with the backend. Password sign-in must still establish a valid staff session via `/admin/auth/me`. The frontend clears old pending challenges and redirects verification URLs to sign-in. OTP UI and helpers are preserved; restore the flag to `true` and rebuild when backend MFA resumes. Customer authentication is unchanged.
+
 - Staff sign-in, MFA challenge verification, session restoration through `/admin/auth/me`, expiry handling and sign-out.
-- Product list with server search/category/stock/date filters and pagination, inventory summaries and product details modal (including direct details URLs).
+- Product list with server search/category/stock/date filters and pagination, optional inventory summaries and product details modal (including direct details URLs). The v2 response may omit `summary`; products still load, pagination provides the filtered count, and unavailable stock totals show a dash rather than zero. Stock summaries are never inferred from a single page.
 - Product creation/editing through the existing wizard, image uploads, activation/deactivation and confirmed deletion.
 - Categories/collections: server pagination/search, detail dialogs with paginated product assignments, create/edit/delete. Create a category before adding the first product.
 - Category editor requires an image, uploads JPEG/PNG/WebP through `/admin/assets`, previews the returned URL and sends `imageId` on create/update. Existing image IDs survive editing and successful uploads remain selected after a failed save. Collection image uploads are optional. The backend owner confirmed category images are required although the saved OpenAPI marks `imageId` optional; the backend should document and validate this requirement with 422 rather than 500.
@@ -38,6 +40,14 @@ Customer home/shop now read the public backend catalog. Published active product
 
 ## Transport and configuration
 
+Latest taxonomy update contract: category and collection PATCH requests now use multipart `name`, `description`, `status`, optional replacement `file`/`alt`, and `If-Match`. Metadata-only edits preserve the existing image without requiring an image ID. Slugs are displayed read-only because the current update schema does not accept them. Product PATCH remains JSON. This supersedes the earlier taxonomy JSON PATCH notes below.
+
+An operation returning 401 now triggers a separate `/admin/auth/me` check. The workspace and unsaved form remain mounted if that session check succeeds or cannot establish expiry. Only a confirmed session-check 401 clears the staff session. Requests are not automatically replayed, and stale checks cannot clear a newer sign-in.
+
+Current multipart create contract (28 October 2026): category and collection creation submit only name, description, status, optional file/alt. The category form requires an image file; collection images remain optional. Slugs are server-owned. Legacy taxonomy_status/image_id aliases are no longer submitted.
+
+Product creation submits name, description, price_amount (GHS), price_currency, category_id, status, repeated product_images binary files, and repeated colors/variants containing JSON objects. Legacy product_status, collection_ids, image_ids, file and alt are not accepted by this endpoint. Colour photos uploaded through /admin/assets retain known IDs; collections and colour-photo links are attached through versioned JSON PATCH after creation. Products needing this final step are created as drafts and receive the selected publication status only when completion succeeds. A failed completion keeps the created draft in the editor, so retry updates that record instead of creating a duplicate. Product edits remain JSON PATCH. The browser generates multipart boundaries and the proxy preserves them. Tests use fixtures, not live store writes.
+
 Staff sign-in now has two screens: `/admin/login` collects credentials and `/admin/login/verify` accepts the six-digit OTP. A challenge response routes to verification; `POST /admin/auth/mfa` sends `{ challengeId, code }`, then `/admin/auth/me` must return a valid staff profile before the workspace opens. The OTP input supports formatted paste, leading zeroes and mobile autofill, with retry and expiry states.
 
 Only the pending challenge ID, email and expiry are retained in tab sessionStorage for refresh recovery. Passwords and OTP codes are never persisted. Challenges use the server expiry with a five-minute client maximum, and are cleared after success, cancellation or expiration. The API exposes no staff OTP resend endpoint, so requesting a new code restarts sign-in.
@@ -49,7 +59,7 @@ After validating the write origin, the proxy supplies `X-CSRF-Token` from a back
 The configured backend above is the default. Override it with a **server-only** `.env.local` entry when needed:
 
 ```dotenv
-ADMIN_API_BASE_URL=https://elizkloset.onrender.com/api/v1
+ADMIN_API_BASE_URL=https://elizkloset-docker.onrender.com/api/v1
 ```
 
 Restart Next.js after changing server configuration. Do not put secrets or credentials in a `NEXT_PUBLIC_` variable.
@@ -58,7 +68,7 @@ Cookie sessions are relayed as HttpOnly cookies, with their path rewritten to th
 
 ## Data mapping
 
-- API money amounts are integer pesewas; display/form values are GHS. Conversion occurs at the adapter boundary.
+- Product API amounts and discounts are GHS, matching display/form values. Do not multiply or divide product amounts by 100. Product covers prefer image_url, with images[0].url as a fallback; colour photos retain imageIds links.
 - Product list stock is available stock. Wizard quantities are physical stock, including reserved stock; edits never copy available quantities over physical quantities.
 - Purchasable variant IDs survive updates by color ID and size. Color IDs are stable product-scoped keys. New combinations omit variant ID so the server creates it.
 - Existing asset IDs survive edits. New images upload as multipart files before product save. Data URLs never enter product JSON. Successful uploads are reused on retry during the current browser session.

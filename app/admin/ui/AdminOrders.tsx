@@ -1,4 +1,5 @@
 "use client";
+import ErrorToast from "../../components/ErrorToast";
 import FormError from "../../components/FormError";
 
 import { useState, type FormEvent } from "react";
@@ -38,7 +39,7 @@ export function OrderDetails({ id, onClose, onSaved }: { id: string; onClose: ()
   const order = query.data;
   return <AdminDialog title={order ? `Order ${order.reference}` : "Order details"} busy={busy} onClose={onClose}>
     <ApiStatus loading={query.loading} error={query.error} retry={query.refresh} />
-    {notice && <p role="status" className="admin-notice">{notice}</p>}
+    <ErrorToast message={notice} tone="success" onDismiss={() => setNotice("")} />
     {error && <FormError  className="admin-form-error">{error} <button disabled={busy} onClick={() => { setError(""); query.refresh(); }}>Reload order</button></FormError>}
     {order && <><dl className="admin-definition"><div><dt>Customer</dt><dd>{order.customer.name}<br />{order.customer.email}<br />{order.customer.phone}</dd></div><div><dt>Delivery</dt><dd>{order.deliveryAddress.address}<br />{order.deliveryAddress.city}, {order.deliveryAddress.region}</dd></div><div><dt>Payment</dt><dd>{label(order.paymentStatus)}</dd></div><div><dt>Fulfilment</dt><dd>{label(order.fulfilmentStatus)}</dd></div><div><dt>Created</dt><dd>{order.createdAt?.slice(0, 10)}</dd></div></dl>
       <div className="admin-table-scroll"><table className="admin-table"><thead><tr><th>Item</th><th>Quantity</th><th>Total</th></tr></thead><tbody>{order.items.map((item) => <tr key={item.id}><td>{item.name}<small>{item.color} / {item.size}</small></td><td>{item.quantity}</td><td>{formatPrice(item.lineTotal.amount / 100)}</td></tr>)}</tbody></table></div>

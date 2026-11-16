@@ -1,6 +1,6 @@
 "use client";
+import PageBanner from "./PageBanner";
 import ErrorToast from "./ErrorToast";
-import Image from "next/image";
 import { useEffect, useState, type ReactNode } from "react";
 import type { Product } from "../lib/catalog";
 
@@ -26,7 +26,7 @@ export default function ShopBrowser({ initialCategory, initialQuery, renderProdu
     else filters.set("collection", collection?.slug ?? selected.toLowerCase().replace(/\s+/g, "-"));
   }
   if (size) filters.set("size", size); if (color) filters.set("color", color);
-  if (stock) filters.set("inStock", "true"); if (maxPrice) filters.set("maxPrice", String(Math.round(Number(maxPrice) * 100)));
+  if (stock) filters.set("inStock", "true"); if (maxPrice) filters.set("maxPrice", String(Number(maxPrice)));
   const filterKey = filters.toString();
   useEffect(() => {
     const controller = new AbortController();
@@ -41,7 +41,7 @@ export default function ShopBrowser({ initialCategory, initialQuery, renderProdu
   // Remount the result component on filter changes so an old next-page request cannot replace a new filter.
   function clear() { setSelected(""); setQuery(""); setSize(""); setColor(""); setStock(false); setMaxPrice(""); }
   return <>
-    <section className="shop-banner editorial-shop-banner"><div className="shop-banner-photo"><Image src="/images/hero-burgundy.png" alt="ElizKloset corporate fashion" fill sizes="50vw" style={{ objectPosition: "center top" }} /></div><div className="shop-banner-copy"><p className="shop-banner-eyebrow">Collections &amp; New Arrivals</p><h1>Elegant<br /><span>Corporate Wear</span></h1><p>Discover stylish and professional outfits for every occasion.</p></div></section>
+    <PageBanner />
     <section className="shop-browser section" id="shop" aria-label="Browse products">
       <button className="mobile-filter-button button outline" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)}>Show filters</button>
       <aside className={`shop-sidebar ${filtersOpen ? "filters-open" : ""}`} aria-label="Product filters"><div className="sidebar-heading"><h2>Filters</h2><button onClick={clear}>Clear All</button></div>

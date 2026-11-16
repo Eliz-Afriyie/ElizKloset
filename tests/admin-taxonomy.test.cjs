@@ -6,23 +6,42 @@ afterEach(() => { globalThis.fetch = originalFetch; });
 const taxonomy = load("app/admin/lib/taxonomy.ts");
 const fields = { name: "Two Piece", slug: "two-piece", description: "Trousers and a top", status: "active" };
 
-test("taxonomy uploads multipart image then creates with the returned imageId", async () => {
+test("taxonomy creation rejects unsupported asset-ID-only images", async () => {
+  globalThis.fetch = () => { throw new Error("Must not fetch"); };
+  await assert.rejects(() => taxonomy.saveTaxonomy("categories", fields, "asset-1"), /image file/);
+});
+
+test("new categories send the selected file with their fields in one multipart request", async () => {
   let calls = 0;
   globalThis.fetch = async (url, options) => {
     calls++;
-    if (calls === 1) {
-      assert.equal(url, "/api/admin/assets");
-      assert.ok(options.body instanceof FormData);
-      assert.equal(options.body.get("file").name, "category.png");
-      return Response.json({ data: { id: "asset-1", url: "https://cdn.example/category.png" } });
-    }
     assert.equal(url, "/api/admin/categories");
-    assert.deepEqual(JSON.parse(options.body), { ...fields, imageId: "asset-1" });
+    assert.equal(options.method, "POST");
+    assert.ok(options.body instanceof FormData);
+    assert.equal(options.headers.has("content-type"), false);
+    assert.equal(options.body.get("file").name, "category.png");
+    assert.equal(options.body.get("description"), fields.description);
+    assert.equal(options.body.get("status"), "active");
+    assert.equal(options.body.has("taxonomy_status"), false);
+    assert.equal(options.body.has("image_id"), false);
+    assert.equal(options.body.get("alt"), fields.name);
+    assert.equal(options.body.has("slug"), false);
     return Response.json({ data: { id: "category-1" } }, { status: 201 });
   };
-  const image = await taxonomy.uploadTaxonomyImage(new File(["image"], "category.png", { type: "image/png" }));
-  await taxonomy.saveTaxonomy("categories", fields, image.id);
-  assert.equal(calls, 2);
+  await taxonomy.saveTaxonomy("categories", fields, undefined, null, new File(["image"], "category.png", { type: "image/png" }));
+  assert.equal(calls, 1);
+});
+
+test("new collections also use multipart, with an optional image", async () => {
+  globalThis.fetch = async (url, options) => {
+    assert.equal(url, "/api/admin/collections");
+    assert.ok(options.body instanceof FormData);
+    assert.equal(options.body.get("name"), fields.name);
+    assert.equal(options.body.get("status"), fields.status);
+    assert.equal(options.body.has("file"), false);
+    return Response.json({});
+  };
+  await taxonomy.saveTaxonomy("collections", fields);
 });
 
 test("category requires an image and failed uploads never report success", async () => {
@@ -33,13 +52,40 @@ test("category requires an image and failed uploads never report success", async
   await assert.rejects(() => taxonomy.uploadTaxonomyImage(new File(["image"], "file.png", { type: "image/png" })), /image ID/);
 });
 
-test("editing preserves the existing image ID and version", async () => {
+test("editing sends multipart fields and version without replacing an existing image", async () => {
   globalThis.fetch = async (url, options) => {
     assert.equal(url, "/api/admin/categories/category-1");
     assert.equal(options.method, "PATCH");
     assert.equal(options.headers.get("if-match"), '"4"');
-    assert.equal(JSON.parse(options.body).imageId, "existing-asset");
+    assert.ok(options.body instanceof FormData);
+    assert.equal(options.headers.has("content-type"), false);
+    assert.equal(options.body.get("name"), fields.name);
+    assert.equal(options.body.get("status"), fields.status);
+    assert.equal(options.body.has("file"), false);
+    assert.equal(options.body.has("imageId"), false);
+    assert.equal(options.body.has("slug"), false);
     return Response.json({});
   };
   await taxonomy.saveTaxonomy("categories", fields, "existing-asset", { id: "category-1", version: 4 });
+});
+
+test("editing can replace an image in the same multipart request", async () => {
+  globalThis.fetch = async (url, options) => {
+    assert.equal(url, "/api/admin/categories/category-1");
+    assert.equal(options.method, "PATCH");
+    assert.equal(options.body.get("file").name, "replacement.png");
+    assert.equal(options.body.get("description"), "");
+    return Response.json({});
+  };
+  await taxonomy.saveTaxonomy("categories", { ...fields, description: "" }, undefined, { id: "category-1", version: 2 }, new File(["image"], "replacement.png", { type: "image/png" }));
+});
+
+test("metadata-only category edits do not require a new image ID", async () => {
+  globalThis.fetch = async (url, options) => {
+    assert.equal(url, "/api/admin/categories/category-1");
+    assert.equal(options.body.get("name"), fields.name);
+    assert.equal(options.body.has("file"), false);
+    return Response.json({});
+  };
+  await taxonomy.saveTaxonomy("categories", { name: fields.name }, undefined, { id: "category-1", version: 2 });
 });

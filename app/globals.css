@@ -308,7 +308,7 @@ html { scroll-padding-top: 110px; }
   .product-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
   .product-body h3 { font-size: 12px; }
   .view-all-button { font-size: 11px; }
-  .hero-carousel .hero-heading { white-space: nowrap; }
+  .hero-carousel .hero-heading { white-space: pre-line; max-width: 100%; overflow-wrap: anywhere; line-height: 1.02; }
 }
 @media(prefers-reduced-motion:reduce) { .carousel-slide, .hero-carousel .hero-content { transition: none; transform: none; } }
 

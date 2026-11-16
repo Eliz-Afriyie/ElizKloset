@@ -31,6 +31,8 @@ function payload(url) {
   throw new Error("Unexpected UI query: " + url);
 }
 const overrides = {
+  "./gallery.css": {},
+  "./content-preview.css": {},
   [path.resolve("app/admin/ui/AdminSession.tsx")]: { useAdminSession: () => session },
   [path.resolve("app/admin/lib/useAdminQuery.ts")]: { useAdminQuery: (url, parse) => { if (!url) return { data: null, loading: false, error: "", refresh() {} }; requested.push(url); return { data: parse(payload(url)), loading: false, error: "", refresh() {} }; } },
   "next/navigation": { useRouter: () => ({ push() {}, replace() {} }) },
@@ -45,6 +47,17 @@ const Settings = load("app/admin/ui/AdminSettings.tsx", overrides).default;
 const Reviews = load("app/admin/ui/AdminReviews.tsx", overrides).default;
 const Controls = load("app/admin/ui/ApiControls.tsx", overrides);
 const render = (component, props = {}) => renderToStaticMarkup(React.createElement(component, props));
+
+test("Gallery appears in the sidebar for catalog and content staff", () => {
+  try {
+    for (const permission of ["catalog:read", "catalog:write", "content:read", "content:write"]) {
+      session = { ...session, staff: { ...owner, permissions: [permission] } };
+      assert.match(render(Portal, { section: "customers" }), /href="\/admin\/gallery"/);
+    }
+    session = { ...session, staff: { ...owner, permissions: ["orders:read"] } };
+    assert.doesNotMatch(render(Portal, { section: "customers" }), /href="\/admin\/gallery"/);
+  } finally { session = { ...session, staff: owner }; }
+});
 
 test("remaining admin pages render their backend data instead of an integration placeholder", () => {
   session = { ...session, staff: owner };
@@ -94,6 +107,14 @@ test("login requires a staff account and no longer offers a demo entry", () => {
   const html = render(Login);
   assert.match(html, /Work email/);
   assert.doesNotMatch(html, /Open demo|explore the design|sample data/i);
+  session = { ...session, staff: owner };
+});
+
+test("development staff login hides MFA progress and verification copy", () => {
+  session = { ...session, staff: null };
+  const html = render(Login);
+  assert.match(html, /Sign in with your staff account/);
+  assert.doesNotMatch(html, /STEP 1 OF 2|Verify OTP|receive your staff verification code/);
   session = { ...session, staff: owner };
 });
 

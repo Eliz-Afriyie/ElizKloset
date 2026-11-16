@@ -9,3 +9,9 @@
 .error-toast-close svg { width: 18px; height: 18px; }
 .error-toast button:focus-visible { outline: 2px solid #750d27; outline-offset: 3px; border-radius: 3px; }
 @media(max-width: 600px) { .error-toast-stack { top: auto; bottom: max(20px, env(safe-area-inset-bottom)); right: 16px; max-height: 50dvh; } }
+
+.error-toast-stack[popover] { inset: 100px 24px auto auto; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; overflow: visible; }
+.error-toast-stack[popover]:not(:popover-open) { display: none; }
+.success-toast { border-color: #bad6c5; border-left-color: #326047; color: #254934; }
+.success-toast .error-toast-symbol { background: #326047; }
+@media(max-width: 600px) { .error-toast-stack[popover] { inset: auto 16px max(20px, env(safe-area-inset-bottom)) auto; } }
